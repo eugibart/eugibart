@@ -45,6 +45,55 @@ impl SerialKLine {
     }
 }
 
+/// FTDI's USB vendor ID — genuine FT232-class cables (the kind that work
+/// reliably for K-line) enumerate under this.
+pub const FTDI_VID: u16 = 0x0403;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UsbDetails {
+    pub vid: u16,
+    pub pid: u16,
+    pub product: Option<String>,
+    pub manufacturer: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PortDetails {
+    pub name: String,
+    /// Present when the OS reports this port as a USB device.
+    pub usb: Option<UsbDetails>,
+}
+
+impl PortDetails {
+    pub fn is_ftdi(&self) -> bool {
+        self.usb.as_ref().is_some_and(|u| u.vid == FTDI_VID)
+    }
+}
+
+/// Enumerate serial ports with USB metadata where the OS provides it (used
+/// by the connection troubleshooter to spot FTDI cables vs. CH340 clones).
+pub fn port_details() -> Vec<PortDetails> {
+    serialport::available_ports()
+        .map(|ports| {
+            ports
+                .into_iter()
+                .map(|p| PortDetails {
+                    name: p.port_name,
+                    usb: match p.port_type {
+                        serialport::SerialPortType::UsbPort(info) => Some(UsbDetails {
+                            vid: info.vid,
+                            pid: info.pid,
+                            product: info.product,
+                            manufacturer: info.manufacturer,
+                        }),
+                        _ => None,
+                    },
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 impl KLineTransport for SerialKLine {
     fn send(&mut self, bytes: &[u8]) -> Result<()> {
         self.port.write_all(bytes)?;
@@ -52,11 +101,20 @@ impl KLineTransport for SerialKLine {
         if self.consume_echo {
             // Give the echo generous time: it should arrive within a few byte
             // times, but USB latency batches arrivals.
-            let echoed = self.read_exact(
-                bytes.len(),
-                Duration::from_millis(200),
-                Duration::from_millis(50),
-            )?;
+            let echoed = self
+                .read_exact(
+                    bytes.len(),
+                    Duration::from_millis(200),
+                    Duration::from_millis(50),
+                )
+                .map_err(|e| match e {
+                    // A missing echo is a wiring/cable diagnosis, not a
+                    // generic timeout — see TransportError::NoEcho.
+                    TransportError::Timeout => TransportError::NoEcho {
+                        sent: bytes.to_vec(),
+                    },
+                    other => other,
+                })?;
             if echoed != bytes {
                 return Err(TransportError::EchoMismatch {
                     sent: bytes.to_vec(),

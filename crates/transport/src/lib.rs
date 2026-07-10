@@ -23,6 +23,13 @@ pub enum TransportError {
     Io(#[from] std::io::Error),
     #[error("timed out waiting for data")]
     Timeout,
+    /// Transmitted bytes never echoed back. K-line is a single wire, so our
+    /// own TX always loops back when the cable's K-line pin is actually
+    /// connected to the bus — no echo at all means a wiring/cable fault, not
+    /// a silent ECU. Kept distinct from [`TransportError::Timeout`] because
+    /// the two point at completely different problems.
+    #[error("no bus echo received for transmitted bytes {sent:02X?}")]
+    NoEcho { sent: Vec<u8> },
     #[error("bus echo mismatch: sent {sent:02X?}, read back {echoed:02X?}")]
     EchoMismatch { sent: Vec<u8>, echoed: Vec<u8> },
     #[error("link closed")]

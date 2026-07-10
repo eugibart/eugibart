@@ -46,24 +46,43 @@ export default function DtcScreen({ serviceMode }: { serviceMode: boolean }) {
       {dtcs && dtcs.length === 0 && <p className="ok-box">No stored fault codes.</p>}
 
       {dtcs && dtcs.length > 0 && (
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Status</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            {dtcs.map((d) => (
-              <tr key={d.code}>
-                <td className="mono">{d.code.toString(16).toUpperCase().padStart(4, "0")}</td>
-                <td className="mono">0x{d.status.toString(16).toUpperCase().padStart(2, "0")}</td>
-                <td>{d.description ?? <span className="muted">unknown code</span>}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="dtc-list">
+          {dtcs.map((d) => (
+            <div className="dtc-card" key={d.code}>
+              <div className="dtc-head">
+                <span className="mono dtc-code">
+                  {d.code.toString(16).toUpperCase().padStart(4, "0")}
+                </span>
+                <span className="dtc-desc">
+                  {d.description ?? <span className="muted">unknown code</span>}
+                </span>
+                <span className="mono muted small">
+                  status 0x{d.status.toString(16).toUpperCase().padStart(2, "0")}
+                </span>
+              </div>
+              {d.causes.length > 0 && (
+                <div className="dtc-section">
+                  <span className="dtc-section-title">Likely causes</span>
+                  <ol className="dtc-items">
+                    {d.causes.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+              {d.checks.length > 0 && (
+                <div className="dtc-section">
+                  <span className="dtc-section-title">What to check</span>
+                  <ol className="dtc-items">
+                    {d.checks.map((c, i) => (
+                      <li key={i}>{c}</li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       <div className="btn-row">

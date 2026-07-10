@@ -4,6 +4,8 @@ import { api } from "../ipc";
 export default function LoggingScreen() {
   const [logPath, setLogPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reportPath, setReportPath] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     api
@@ -28,6 +30,18 @@ export default function LoggingScreen() {
       setLogPath(null);
     } catch (e) {
       setError(String(e));
+    }
+  };
+
+  const exportReport = async () => {
+    setError(null);
+    setExporting(true);
+    try {
+      setReportPath(await api.exportHealthReport());
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -60,6 +74,21 @@ export default function LoggingScreen() {
           </button>
         </>
       )}
+
+      <h2 className="section-gap">Bike health report</h2>
+      <p className="muted">
+        Snapshot the ECU right now — identity, fault codes with likely causes, live data —
+        as a single HTML file you can keep, print, or send to a mechanic or a seller.
+        Handy for pre-purchase inspections.
+      </p>
+      {reportPath && (
+        <p className="ok-box">
+          Report saved to <span className="mono">{reportPath}</span>
+        </p>
+      )}
+      <button className="btn btn-primary" onClick={exportReport} disabled={exporting}>
+        {exporting ? "Reading ECU…" : "Export health report"}
+      </button>
     </div>
   );
 }

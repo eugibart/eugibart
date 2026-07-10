@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, ConnectionInfo, DefinitionInfo, SIMULATOR_PORT } from "../ipc";
+import { api, ConnectionInfo, DefinitionInfo, SIMULATOR_PORT, TroubleshootStep } from "../ipc";
 
 export default function ConnectScreen({
   onConnected,
@@ -12,6 +12,8 @@ export default function ConnectScreen({
   const [port, setPort] = useState(SIMULATOR_PORT);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [troubleshooting, setTroubleshooting] = useState(false);
+  const [steps, setSteps] = useState<TroubleshootStep[] | null>(null);
 
   const refresh = async () => {
     const [defs, portList] = await Promise.all([
@@ -36,12 +38,26 @@ export default function ConnectScreen({
   const connect = async () => {
     setBusy(true);
     setError(null);
+    setSteps(null);
     try {
       onConnected(await api.connect(definitionId, port));
     } catch (e) {
       setError(String(e));
     } finally {
       setBusy(false);
+    }
+  };
+
+  const troubleshoot = async () => {
+    setTroubleshooting(true);
+    setSteps(null);
+    setError(null);
+    try {
+      setSteps(await api.troubleshootConnection(definitionId, port));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setTroubleshooting(false);
     }
   };
 
@@ -96,9 +112,37 @@ export default function ConnectScreen({
 
       {error && <div className="error-box">{error}</div>}
 
-      <button className="btn btn-primary" onClick={connect} disabled={busy || !definitionId}>
-        {busy ? "Connecting…" : "Connect"}
-      </button>
+      <div className="btn-row">
+        <button className="btn btn-primary" onClick={connect} disabled={busy || !definitionId}>
+          {busy ? "Connecting…" : "Connect"}
+        </button>
+        <button
+          className="btn"
+          onClick={troubleshoot}
+          disabled={troubleshooting || !definitionId}
+          title="Step-by-step check of cable, port, wiring, and ECU handshake"
+        >
+          {troubleshooting ? "Testing…" : "Troubleshoot connection"}
+        </button>
+      </div>
+
+      {steps && (
+        <div className="ts-panel">
+          <h3>Connection check</h3>
+          {steps.map((s) => (
+            <div className={`ts-step ts-${s.status}`} key={s.name}>
+              <div className="ts-head">
+                <span className="ts-icon">
+                  {s.status === "passed" ? "✓" : s.status === "failed" ? "✗" : "○"}
+                </span>
+                <span className="ts-name">{s.name}</span>
+              </div>
+              <div className="ts-detail">{s.detail}</div>
+              {s.suggestion && <div className="ts-suggestion">→ {s.suggestion}</div>}
+            </div>
+          ))}
+        </div>
+      )}
 
       <p className="muted small">
         Connecting is always read-only. Service operations require explicitly enabling

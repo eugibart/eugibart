@@ -8,6 +8,10 @@ pub struct Dtc {
     pub status: u8,
     /// Human-readable meaning from the ECU definition's table, if known.
     pub description: Option<String>,
+    /// Likely culprits from the definition's DTC table, most common first.
+    pub causes: Vec<String>,
+    /// What to physically check, in order.
+    pub checks: Vec<String>,
 }
 
 impl Dtc {
@@ -25,15 +29,13 @@ pub fn parse_read_dtc_response(payload: &[u8], def: &EcuDefinition) -> Vec<Dtc> 
     rest.chunks_exact(3)
         .map(|chunk| {
             let code = u16::from_be_bytes([chunk[0], chunk[1]]);
+            let entry = def.dtc.table.iter().find(|e| e.code == code);
             Dtc {
                 code,
                 status: chunk[2],
-                description: def
-                    .dtc
-                    .table
-                    .iter()
-                    .find(|e| e.code == code)
-                    .map(|e| e.description.clone()),
+                description: entry.map(|e| e.description.clone()),
+                causes: entry.map(|e| e.causes.clone()).unwrap_or_default(),
+                checks: entry.map(|e| e.checks.clone()).unwrap_or_default(),
             }
         })
         .collect()

@@ -12,6 +12,15 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
 
 - Connect over a cheap FTDI KKL K-line cable ([hardware guide](docs/HARDWARE.md))
 - Identify the ECU, read & clear fault codes, watch live sensor data
+- **Guided connection troubleshooting** — every failure is classified (cable
+  missing, port busy, no bus echo → wiring, silent ECU → ignition/+12V,
+  garbled → baud) with a concrete next step, because "it won't connect" is
+  the #1 complaint about every existing K-line tool
+- **Plain-language fault codes** — each known DTC lists likely causes and
+  what to physically check, not just a hex code
+- **One-click bike health report** — self-contained HTML snapshot (identity,
+  DTCs with guidance, live data) for pre-purchase inspections or sending to
+  a mechanic
 - Log live data to CSV; capture every session as a replayable wire trace
 - Service functions (actuator tests, TPS reset, CO trim) behind hard safety
   interlocks — **ECU map read/write is deliberately out of scope**
@@ -105,6 +114,15 @@ permanent regression tests.
   the CAN side into `app-core::DiagSession`/the desktop UI, and any real CAN
   hardware/bike validation — both are natural next steps once M5's groundwork
   has a CAN-era bike to test against.
+
+### Forum-driven quality-of-life features (built)
+
+Owner-forum research (mvagusta.net, ducati.ms/.org) drove three additions
+beyond the original milestones: the connection troubleshooter (P0 — attacks
+the single most-complained-about failure mode of JPDiag/MelcoDiag-era tools),
+the plain-language DTC causes/checks library, and the HTML health report.
+Still on the researched backlog: log charts, a community definition-exchange
+flow, and a scripted charging-system health check.
 
 ## Status
 

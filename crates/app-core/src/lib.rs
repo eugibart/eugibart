@@ -8,8 +8,10 @@ pub mod discovery;
 pub mod dtc;
 pub mod live_data;
 pub mod logging;
+pub mod report;
 pub mod safety;
 pub mod session;
+pub mod troubleshoot;
 
 pub use session::{ConnectOptions, DiagSession, EcuIdentity};
 

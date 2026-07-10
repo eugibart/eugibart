@@ -309,6 +309,249 @@ pub async fn start_csv_log(state: State<'_, AppState>) -> Result<String, String>
     })
 }
 
+/// Read fresh DTCs + live data from the connected ECU and write a
+/// self-contained HTML health report. Returns the file path.
+#[tauri::command]
+pub async fn export_health_report(state: State<'_, AppState>) -> Result<String, String> {
+    use motodiag_app_core::report::{render_html, ReportInput};
+
+    with_connection(&state, |conn| {
+        let dtcs = conn.session.read_dtcs().map_err(|e| e.to_string())?;
+        let readings: Vec<Reading> = conn
+            .session
+            .poll_all_channels()
+            .into_iter()
+            .filter_map(|r| r.ok())
+            .collect();
+
+        let now_ms = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_millis() as u64)
+            .unwrap_or(0);
+        let html = render_html(&ReportInput {
+            def: conn.session.definition(),
+            identity: conn.session.identity(),
+            dtcs: &dtcs,
+            readings: &readings,
+            simulated: conn.sim_thread.is_some(),
+            generated_at_ms: now_ms,
+        });
+
+        let dir = std::env::temp_dir().join("motodiag-reports");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let path = dir.join(format!(
+            "motodiag-report-{}-{}.html",
+            conn.session.definition().ecu.id,
+            now_ms / 1000
+        ));
+        std::fs::write(&path, html).map_err(|e| e.to_string())?;
+        Ok(path.display().to_string())
+    })
+}
+
+#[derive(serde::Serialize)]
+pub struct TroubleshootStep {
+    pub name: String,
+    /// "passed" | "failed" | "skipped"
+    pub status: String,
+    pub detail: String,
+    pub suggestion: Option<String>,
+}
+
+impl TroubleshootStep {
+    fn passed(name: &str, detail: String) -> Self {
+        Self {
+            name: name.into(),
+            status: "passed".into(),
+            detail,
+            suggestion: None,
+        }
+    }
+    fn failed(name: &str, detail: String, suggestion: String) -> Self {
+        Self {
+            name: name.into(),
+            status: "failed".into(),
+            detail,
+            suggestion: Some(suggestion),
+        }
+    }
+    fn skipped(name: &str, detail: String) -> Self {
+        Self {
+            name: name.into(),
+            status: "skipped".into(),
+            detail,
+            suggestion: None,
+        }
+    }
+}
+
+/// Staged connection diagnosis: cable → port → bus/ECU handshake. Runs
+/// without touching the active session (it opens its own transport), so it's
+/// safe to run while disconnected — which is exactly when you need it.
+#[tauri::command]
+pub async fn troubleshoot_connection(
+    definition_id: String,
+    port: String,
+) -> Result<Vec<TroubleshootStep>, String> {
+    use motodiag_app_core::troubleshoot::{probe_connection, FailurePoint};
+    use motodiag_transport::serial_vcp::{port_details, FTDI_VID};
+
+    let registry = load_registry();
+    let def = registry
+        .get(&definition_id)
+        .ok_or_else(|| format!("unknown ECU definition '{definition_id}'"))?
+        .clone();
+    let init = def.init.clone().ok_or_else(|| {
+        format!("'{definition_id}' is a CAN-bus definition; troubleshooting supports K-line only")
+    })?;
+
+    let mut steps = Vec::new();
+
+    // Step 1: interface cable presence.
+    let simulated = port == SIMULATOR_PORT;
+    if simulated {
+        steps.push(TroubleshootStep::passed(
+            "Interface cable",
+            "Using the built-in simulator — no cable involved.".into(),
+        ));
+    } else {
+        let details = port_details();
+        match details.iter().find(|d| d.name == port) {
+            Some(d) if d.is_ftdi() => steps.push(TroubleshootStep::passed(
+                "Interface cable",
+                format!(
+                    "{port} is an FTDI device ({}) — the right chip family for K-line.",
+                    d.usb
+                        .as_ref()
+                        .and_then(|u| u.product.clone())
+                        .unwrap_or_else(|| "unnamed".into())
+                ),
+            )),
+            Some(d) => {
+                let (vid, product) = d
+                    .usb
+                    .as_ref()
+                    .map(|u| {
+                        (
+                            format!("{:04X}", u.vid),
+                            u.product.clone().unwrap_or_default(),
+                        )
+                    })
+                    .unwrap_or_else(|| ("not USB".into(), String::new()));
+                steps.push(TroubleshootStep {
+                    name: "Interface cable".into(),
+                    status: "passed".into(),
+                    detail: format!("{port} found ({product}, vendor {vid})."),
+                    suggestion: Some(format!(
+                        "This is not an FTDI device (vendor {vid}, FTDI is {FTDI_VID:04X}). \
+                         CH340-class clones often fail at K-line init timing — if the handshake \
+                         step below fails, a genuine FTDI KKL cable is the first thing to try."
+                    )),
+                });
+            }
+            None => {
+                let available: Vec<String> = details.into_iter().map(|d| d.name).collect();
+                steps.push(TroubleshootStep::failed(
+                    "Interface cable",
+                    format!("{port} is not present on this system."),
+                    if available.is_empty() {
+                        "No serial ports found at all. Plug the cable in, then hit Refresh. On \
+                         macOS an FTDI cable should appear as /dev/cu.usbserial-XXXX with no \
+                         driver install needed."
+                            .into()
+                    } else {
+                        format!(
+                            "Available ports: {}. Pick one of those, or re-plug the cable.",
+                            available.join(", ")
+                        )
+                    },
+                ));
+                steps.push(TroubleshootStep::skipped(
+                    "Open serial port",
+                    "No cable to open.".into(),
+                ));
+                steps.push(TroubleshootStep::skipped(
+                    "Bus & ECU handshake",
+                    "No cable to test.".into(),
+                ));
+                return Ok(steps);
+            }
+        }
+    }
+
+    // Step 2: open the port / create the transport.
+    let transport: Box<dyn KLineTransport> = if simulated {
+        let (tester, ecu) = mock::pair();
+        // Detached simulator thread; exits when the link drops at the end of
+        // the probe.
+        std::thread::spawn(move || {
+            motodiag_ecu_sim::run_on_link(
+                motodiag_ecu_sim::Simulator::new(motodiag_ecu_sim::SimConfig::default()),
+                ecu,
+            )
+        });
+        steps.push(TroubleshootStep::passed(
+            "Open serial port",
+            "Simulator link created.".into(),
+        ));
+        Box::new(tester)
+    } else {
+        match motodiag_transport::serial_vcp::SerialKLine::open(&port, init.baud) {
+            Ok(serial) => {
+                steps.push(TroubleshootStep::passed(
+                    "Open serial port",
+                    format!("{port} opened at {} baud.", init.baud),
+                ));
+                Box::new(serial)
+            }
+            Err(e) => {
+                steps.push(TroubleshootStep::failed(
+                    "Open serial port",
+                    format!("Could not open {port}: {e}"),
+                    "Another program may be holding the port (a previous session, a different \
+                     diagnostic tool). Close other tools, unplug/replug the cable, and try \
+                     again."
+                        .into(),
+                ));
+                steps.push(TroubleshootStep::skipped(
+                    "Bus & ECU handshake",
+                    "Port could not be opened.".into(),
+                ));
+                return Ok(steps);
+            }
+        }
+    };
+
+    // Step 3: wake-up + init + identification, classified.
+    let options = if simulated {
+        ConnectOptions {
+            fast_init: Some(FastInitConfig {
+                idle_before: Duration::from_millis(1),
+                low_time: Duration::from_millis(1),
+                high_time: Duration::from_millis(1),
+            }),
+            ..Default::default()
+        }
+    } else {
+        ConnectOptions::default()
+    };
+    let diagnosis = probe_connection(transport, &def, &options);
+    if diagnosis.failure_point == FailurePoint::None {
+        steps.push(TroubleshootStep::passed(
+            "Bus & ECU handshake",
+            diagnosis.finding,
+        ));
+    } else {
+        steps.push(TroubleshootStep::failed(
+            "Bus & ECU handshake",
+            diagnosis.finding,
+            diagnosis.suggestion,
+        ));
+    }
+
+    Ok(steps)
+}
+
 #[tauri::command]
 pub async fn stop_csv_log(state: State<'_, AppState>) -> Result<Option<String>, String> {
     with_connection(&state, |conn| Ok(conn.csv_log.take().map(|(path, _)| path)))

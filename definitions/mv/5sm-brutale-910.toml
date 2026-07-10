@@ -111,13 +111,36 @@ read_request = [0x18, 0x02, 0xFF, 0x00]  # ReadDTCByStatus: all identified DTCs
 clear_request = [0x14, 0xFF, 0x00]       # ClearDiagnosticInformation: all groups
 
 # DTC meanings to be populated from the workshop manual / JPDiag captures.
+# The causes/checks lists are general Marelli-IAW/Brutale workshop knowledge —
+# keep them practical and ordered most-likely-first.
 [[dtc.table]]
 code = 0x0115
 description = "Throttle position sensor — signal implausible (placeholder)"
+causes = [
+    "TPS connector corrosion or loose pin (exposed to spray on the throttle bodies)",
+    "TPS out of adjustment after throttle body service",
+    "Worn TPS track (high-mileage bikes)",
+    "Damaged wiring between TPS and ECU",
+]
+checks = [
+    "Unplug the TPS connector, inspect for green corrosion, clean with contact cleaner",
+    "With key on, watch the TPS live-data channel: sweep the throttle slowly and look for dropouts",
+    "Run the TPS reset routine after any throttle body work",
+]
 
 [[dtc.table]]
 code = 0x0120
 description = "Coolant temperature sensor — open/short circuit (placeholder)"
+causes = [
+    "Sensor connector unplugged or corroded",
+    "Failed coolant temperature sensor (reads open circuit)",
+    "Chafed wiring near the thermostat housing",
+]
+checks = [
+    "Compare the coolant temp live-data value against ambient with a cold engine — a stuck -40°C reading means open circuit",
+    "Check connector seating and pins at the sensor",
+    "Measure sensor resistance cold vs warm against the workshop manual table",
+]
 
 # ---------------------------------------------------------------------------
 # Service routines. Requests are placeholders until sniffed from JPDiag (M4);

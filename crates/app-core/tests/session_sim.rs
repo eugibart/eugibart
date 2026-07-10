@@ -59,12 +59,19 @@ fn reads_and_maps_dtcs() {
     let dtcs = session.read_dtcs().expect("read DTCs");
     assert_eq!(dtcs.len(), 2);
     assert_eq!(dtcs[0].code, 0x0115);
-    // The definition's DTC table supplies the description.
+    // The definition's DTC table supplies the description plus the
+    // plain-language causes/checks lists.
     assert!(dtcs[0]
         .description
         .as_deref()
         .unwrap_or("")
         .contains("Throttle"));
+    assert!(
+        !dtcs[0].causes.is_empty(),
+        "TPS code should list likely causes"
+    );
+    assert!(dtcs[0].causes[0].contains("connector"));
+    assert!(!dtcs[0].checks.is_empty(), "TPS code should list checks");
 }
 
 #[test]

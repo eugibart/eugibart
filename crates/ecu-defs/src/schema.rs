@@ -208,6 +208,13 @@ impl Default for DtcConfig {
 pub struct DtcEntry {
     pub code: u16,
     pub description: String,
+    /// Likely culprits, most common first ("TPS connector corrosion",
+    /// "throttle cable out of adjustment"). Plain language for the UI.
+    #[serde(default)]
+    pub causes: Vec<String>,
+    /// What to physically check/do, in order.
+    #[serde(default)]
+    pub checks: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

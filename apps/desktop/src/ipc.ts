@@ -42,6 +42,8 @@ export interface Dtc {
   code: number;
   status: number;
   description: string | null;
+  causes: string[];
+  checks: string[];
 }
 
 export interface Reading {
@@ -50,6 +52,13 @@ export interface Reading {
   unit: string;
   value: number;
   timestamp_ms: number;
+}
+
+export interface TroubleshootStep {
+  name: string;
+  status: "passed" | "failed" | "skipped";
+  detail: string;
+  suggestion: string | null;
 }
 
 export const SIMULATOR_PORT = "simulator";
@@ -69,4 +78,7 @@ export const api = {
     invoke<string>("run_routine", { key, confirmed }),
   startCsvLog: () => invoke<string>("start_csv_log"),
   stopCsvLog: () => invoke<string | null>("stop_csv_log"),
+  troubleshootConnection: (definitionId: string, port: string) =>
+    invoke<TroubleshootStep[]>("troubleshoot_connection", { definitionId, port }),
+  exportHealthReport: () => invoke<string>("export_health_report"),
 };
