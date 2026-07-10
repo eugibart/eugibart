@@ -6,7 +6,13 @@ use serde::{Deserialize, Serialize};
 #[serde(deny_unknown_fields)]
 pub struct EcuDefinition {
     pub ecu: EcuInfo,
-    pub init: InitConfig,
+    /// K-line/KWP2000 bus config. Required when `ecu.bus = "k-line"`, absent
+    /// when `ecu.bus = "can"` (see `can` below instead).
+    #[serde(default)]
+    pub init: Option<InitConfig>,
+    /// CAN/UDS bus config. Required when `ecu.bus = "can"`, absent otherwise.
+    #[serde(default)]
+    pub can: Option<CanBusConfig>,
     #[serde(default)]
     pub timing: TimingOverrides,
     #[serde(default)]
@@ -64,6 +70,19 @@ pub struct InitConfig {
 
 fn default_tester_address() -> u8 {
     0xF1
+}
+
+/// CAN/UDS bus addressing. Segmentation for payloads over 7 bytes is handled
+/// by ISO-TP (`crates/protocol-can`), not by this config.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct CanBusConfig {
+    /// CAN ID the tester transmits requests on.
+    pub tx_id: u32,
+    /// CAN ID the ECU responds on.
+    pub rx_id: u32,
+    #[serde(default)]
+    pub extended_ids: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -232,21 +251,48 @@ pub struct Preconditions {
 
 /// Service IDs that definitions may use. Memory/flash services are absent on
 /// purpose: a definition file must never be able to reach map read/write.
+/// Covers both KWP2000 (K-line) and UDS/ISO 14229 (CAN) — the two protocols
+/// share several identical SIDs (0x10, 0x14, 0x3E) and the 0x7F negative
+/// response convention; where they differ, both are listed. Notably absent:
+/// UDS WriteDataByIdentifier (0x2E) and SecurityAccess (0x27) — see
+/// docs/SAFETY.md.
 const ALLOWED_SIDS: &[u8] = &[
-    0x10, // StartDiagnosticSession
+    0x10, // StartDiagnosticSession / DiagnosticSessionControl
     0x14, // ClearDiagnosticInformation
-    0x18, // ReadDTCByStatus
-    0x1A, // ReadEcuIdentification
-    0x21, // ReadDataByLocalIdentifier
-    0x30, // InputOutputControlByLocalIdentifier
-    0x31, // StartRoutineByLocalIdentifier
-    0x32, // StopRoutineByLocalIdentifier
-    0x33, // RequestRoutineResultsByLocalIdentifier
+    0x18, // ReadDTCByStatus (KWP2000)
+    0x19, // ReadDTCInformation (UDS)
+    0x1A, // ReadEcuIdentification (KWP2000)
+    0x21, // ReadDataByLocalIdentifier (KWP2000)
+    0x22, // ReadDataByIdentifier (UDS)
+    0x2F, // InputOutputControlByIdentifier (UDS)
+    0x30, // InputOutputControlByLocalIdentifier (KWP2000)
+    0x31, // StartRoutineByLocalIdentifier / RoutineControl
+    0x32, // StopRoutineByLocalIdentifier (KWP2000)
+    0x33, // RequestRoutineResultsByLocalIdentifier (KWP2000)
     0x3E, // TesterPresent
 ];
 
 impl EcuDefinition {
     pub fn validate(&self) -> Result<(), String> {
+        match self.ecu.bus {
+            BusKind::KLine => {
+                if self.init.is_none() {
+                    return Err("bus = \"k-line\" requires an [init] table".to_string());
+                }
+                if self.can.is_some() {
+                    return Err("bus = \"k-line\" must not have a [can] table".to_string());
+                }
+            }
+            BusKind::Can => {
+                if self.can.is_none() {
+                    return Err("bus = \"can\" requires a [can] table".to_string());
+                }
+                if self.init.is_some() {
+                    return Err("bus = \"can\" must not have an [init] table".to_string());
+                }
+            }
+        }
+
         let mut seen = std::collections::HashSet::new();
         for ch in &self.channels {
             if !seen.insert(&ch.key) {
@@ -333,6 +379,65 @@ mod tests {
             verified: false,
         };
         assert_eq!(rpm.decode(&[0x61, 0x01, 0x2E, 0xE0]), Some(3000.0));
+    }
+
+    #[test]
+    fn k_line_bus_requires_init_and_forbids_can() {
+        let missing_init = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+        "#;
+        let def: EcuDefinition = toml::from_str(missing_init).unwrap();
+        assert!(def.validate().unwrap_err().contains("[init]"));
+
+        let both = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+
+            [init]
+            method = "fast"
+            ecu_address = 0x10
+            baud = 10400
+
+            [can]
+            tx_id = 0x7E0
+            rx_id = 0x7E8
+        "#;
+        let def: EcuDefinition = toml::from_str(both).unwrap();
+        assert!(def.validate().unwrap_err().contains("[can]"));
+    }
+
+    #[test]
+    fn can_bus_requires_can_and_forbids_init() {
+        let missing_can = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "can"
+        "#;
+        let def: EcuDefinition = toml::from_str(missing_can).unwrap();
+        assert!(def.validate().unwrap_err().contains("[can]"));
+
+        let valid = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "can"
+
+            [can]
+            tx_id = 0x7E0
+            rx_id = 0x7E8
+        "#;
+        let def: EcuDefinition = toml::from_str(valid).unwrap();
+        assert!(def.validate().is_ok());
     }
 
     #[test]

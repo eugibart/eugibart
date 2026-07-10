@@ -24,6 +24,8 @@ pub enum AppError {
     UnknownChannel(String),
     #[error("unknown routine '{0}' for this ECU")]
     UnknownRoutine(String),
+    #[error("'{0}' is a CAN-bus ECU definition; DiagSession only supports K-line/KWP2000 so far")]
+    NotKLine(String),
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 }

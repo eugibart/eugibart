@@ -38,25 +38,34 @@ pub struct DiagSession {
 
 impl DiagSession {
     /// Initialize the bus per the ECU definition and read the ECU identity.
+    ///
+    /// Only K-line/KWP2000 definitions are supported here; a CAN/UDS
+    /// definition (`def.init` absent) is rejected with `AppError::NotKLine` —
+    /// CAN sessions are a separate, not-yet-wired-up path (see
+    /// `crates/protocol-can`, milestone M5 groundwork).
     pub fn connect(
         mut transport: Box<dyn KLineTransport>,
         def: EcuDefinition,
         options: ConnectOptions,
     ) -> Result<Self> {
+        let init = def
+            .init
+            .clone()
+            .ok_or_else(|| AppError::NotKLine(def.ecu.id.clone()))?;
         let codec = FrameCodec {
-            addressing: Some((def.init.ecu_address, def.init.tester_address)),
-            separate_length_byte: def.init.separate_length_byte,
+            addressing: Some((init.ecu_address, init.tester_address)),
+            separate_length_byte: init.separate_length_byte,
         };
         let timing = timing_from_def(&def);
 
-        match def.init.method {
+        match init.method {
             InitMethod::Fast => {
                 let cfg = options.fast_init.unwrap_or_default();
                 fast_init(transport.as_mut(), &codec, &timing, &cfg)?;
             }
             InitMethod::Slow5Baud => {
                 let cfg = options.slow_init.unwrap_or_default();
-                slow_init_5baud(transport.as_mut(), def.init.ecu_address, &timing, &cfg)?;
+                slow_init_5baud(transport.as_mut(), init.ecu_address, &timing, &cfg)?;
             }
         }
 

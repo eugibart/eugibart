@@ -34,38 +34,59 @@ npm run tauri dev
 There is also a pty-based simulator for testing any serial client:
 `cargo run -p motodiag-ecu-sim --bin ecu-sim-pty`.
 
+The CAN/UDS side (M5 groundwork, not yet wired to the desktop UI) has its own
+in-memory bench simulator, exercised end-to-end in
+`crates/ecu-sim/tests/can_session.rs`.
+
 ## Architecture
 
 ```
 apps/desktop        Tauri v2 shell — React UI, thin command layer
-crates/app-core     session orchestration, safety interlocks, logging
+crates/app-core     session orchestration, safety interlocks, logging, wire-trace recording
 crates/protocol-kwp2000   ISO 14230: init (fast + 5-baud), framing, timing, session
-crates/transport    K-line transports: serial VCP, in-memory mock (CAN later)
-crates/ecu-defs     data-driven ECU definitions (TOML) + validation
-crates/ecu-sim      simulated Marelli-style ECU for dev/tests
+crates/protocol-can       ISO-TP + UDS (ISO 14229) groundwork: frame, transport, session,
+                          SLCAN/ELM327 backends — tested, not yet wired to app-core (M5)
+crates/transport    K-line transports: serial VCP, in-memory mock, byte-level tracing, replay
+crates/ecu-defs     data-driven ECU definitions (TOML) + validation (K-line and CAN)
+crates/ecu-sim      simulated Marelli-style K-line ECU + a simulated CAN/UDS ECU, for dev/tests
 definitions/        per-model TOML files — new bike = new file, not new code
 docs/               HARDWARE, PROTOCOL, MV-PINOUT, SAFETY
-fixtures/           captured wire traces (regression tests)
+fixtures/           captured wire traces, replayable as regression tests
 ```
 
 Everything model-specific lives in `definitions/*.toml` (init method,
 addresses, live-data channels, DTC tables, service routines with
-preconditions). The definition validator structurally rejects memory/flash
-service IDs.
+preconditions — the same shape whether the bus is K-line or CAN). The
+definition validator structurally rejects memory/flash service IDs on both
+buses.
+
+Every session can be captured byte-for-byte (`TracingTransport`, including
+the init handshake) and replayed with no hardware or simulator at all
+(`ReplayTransport`) — see `crates/app-core/tests/replay.rs` and
+`fixtures/README.md`. This is how real-bike captures from M1 onward become
+permanent regression tests.
 
 ## Roadmap
 
 - **M0** ✅ workspace, protocol core, ECU simulator, desktop shell, CI
-- **M1** real K-line connect + ECU identification on the Brutale (verify
-  connector pinout, capture first traces)
-- **M2** DTCs + live data validated against the real bike
-- **M3** logging polish + trace replay viewer
-- **M4** service functions discovered via JPDiag sniffing (TPS reset first)
-- **M5** Ducati: K-line models (5AM/59M definitions), then CAN-era (DDA
-  connector, SLCAN/STN transports)
+- **M1** *(needs the physical bike — not done)* real K-line connect + ECU
+  identification on the Brutale, verify connector pinout, capture first traces
+- **M2** *(needs the physical bike)* DTCs + live data validated against the real bike
+- **M3** ✅ wire-trace recording + replay transport, regression fixture pipeline
+- **M4** *(needs the physical bike + JPDiag/Windows)* service functions discovered
+  via JPDiag sniffing (TPS reset first)
+- **M5** ✅ groundwork done: Ducati K-line definitions (5AM/59M, pure reuse of
+  the existing stack) + CAN/UDS protocol layer (ISO-TP, UDS session, SLCAN/ELM327
+  transports, CAN bench simulator), all tested end-to-end. **Not done**: wiring
+  the CAN side into `app-core::DiagSession`/the desktop UI, and any real CAN
+  hardware/bike validation — both are natural next steps once M5's groundwork
+  has a CAN-era bike to test against.
 
 ## Status
 
-M0. The whole stack works end-to-end against the simulated ECU; nothing has
-touched a real bike yet. All model-specific values in the Brutale definition
-are educated placeholders flagged `verified = false`.
+M0, M3, and M5's software-buildable groundwork are done and thoroughly tested
+(cargo test across the whole workspace, simulator- and mock-bus-driven). M1,
+M2, and M4 all require physical access to a real bike (and, for M4, a Windows
+box running JPDiag) and haven't been started. All model-specific values in
+every definition file — Brutale, Ducati K-line, Ducati CAN stub — are
+educated placeholders flagged `verified = false` until confirmed on hardware.

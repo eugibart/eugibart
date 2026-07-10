@@ -14,4 +14,8 @@ vcp = ["dep:serialport"]
 [dependencies]
 thiserror.workspace = true
 tracing.workspace = true
+serde.workspace = true
 serialport = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json.workspace = true

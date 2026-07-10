@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "crates/transport",
     "crates/protocol-kwp2000",
+    "crates/protocol-can",
     "crates/ecu-defs",
     "crates/ecu-sim",
     "crates/app-core",
@@ -19,6 +20,7 @@ repository = "https://github.com/eugibart/eugibart"
 [workspace.dependencies]
 motodiag-transport = { path = "crates/transport" }
 motodiag-kwp2000 = { path = "crates/protocol-kwp2000" }
+motodiag-protocol-can = { path = "crates/protocol-can" }
 motodiag-ecu-defs = { path = "crates/ecu-defs" }
 motodiag-ecu-sim = { path = "crates/ecu-sim" }
 motodiag-app-core = { path = "crates/app-core" }

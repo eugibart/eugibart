@@ -145,6 +145,7 @@ name = "motodiag-ecu-sim"
 version = "0.1.0"
 dependencies = [
  "motodiag-kwp2000",
+ "motodiag-protocol-can",
  "motodiag-transport",
  "serialport",
  "tracing",
@@ -160,9 +161,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "motodiag-protocol-can"
+version = "0.1.0"
+dependencies = [
+ "motodiag-kwp2000",
+ "serialport",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "motodiag-transport"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "serialport",
  "thiserror",
  "tracing",

@@ -1,19 +1,81 @@
-# Ducati — Magneti Marelli IAW 59M (e.g. 748/996/998, early Monster/SS)
+# Ducati — Magneti Marelli IAW 59M (e.g. 748/916/996/998, early Monster/SS)
 #
-# STATUS: STUB. Older K-line generation; may require 5-baud slow init.
-# Concrete identifiers to be filled in during milestone M5.
+# STATUS: UNVERIFIED SCAFFOLD, same standing as the other definitions in this
+# repo. Older K-line generation; ISO 9141 5-baud slow init is the standard
+# assumption for this era (vs. the 5SM/5AM's fast init) but that too is
+# unconfirmed until tested against real hardware. Another "pure reuse" case:
+# only slow_init_5baud (already implemented and tested in
+# protocol-kwp2000::init) and this data file are involved — no new code.
 
 [ecu]
 id = "ducati-iaw-59m"
-name = "Marelli IAW 59M (stub)"
+name = "Marelli IAW 59M"
 manufacturer = "Ducati"
-models = []
+models = ["748 (1995-2003)", "916/996/998", "Monster 900/S4 (early)", "SS (carbureted-to-fuel-injection transition models)"]
 bus = "k-line"
 verified = false
-notes = "Stub pending M5. Slow init assumption to be confirmed on hardware."
+notes = """
+3-pin FIAT-style diagnostic connector. This ECU generation is old enough that
+fast init may not be supported — 5-baud slow init is the working assumption
+here and should be the first thing verified on hardware.
+"""
 
 [init]
 method = "slow-5-baud"
 ecu_address = 0x10
 tester_address = 0xF1
 baud = 10400
+
+[identification]
+request = [0x1A, 0x80]
+skip_bytes = 2
+
+[[channels]]
+key = "rpm"
+name = "Engine speed"
+unit = "rpm"
+request = [0x21, 0x01]
+offset = 2
+length = 2
+scale = 0.25
+verified = false
+
+[[channels]]
+key = "ect"
+name = "Coolant temperature"
+unit = "°C"
+request = [0x21, 0x03]
+offset = 2
+length = 1
+scale = 1.0
+offset_value = -40.0
+verified = false
+
+[[channels]]
+key = "batt"
+name = "Battery voltage"
+unit = "V"
+request = [0x21, 0x05]
+offset = 2
+length = 1
+scale = 0.0625
+verified = false
+
+[dtc]
+read_request = [0x18, 0x02, 0xFF, 0x00]
+clear_request = [0x14, 0xFF, 0x00]
+
+[[dtc.table]]
+code = 0x0115
+description = "Throttle position sensor — signal implausible (placeholder)"
+
+[[routines]]
+key = "fuel_pump_test"
+name = "Fuel pump actuator test"
+description = "Run the fuel pump briefly to verify operation."
+risk = "low"
+request = [0x30, 0x01, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 11.5

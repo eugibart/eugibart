@@ -1,20 +1,108 @@
-# Ducati — Magneti Marelli IAW 5AM (e.g. Monster 696/1100, Hypermotard era)
+# Ducati — Magneti Marelli IAW 5AM (e.g. Monster 696/1100, Hypermotard 796/1100)
 #
-# STATUS: STUB. K-line/KWP2000 like the MV 5SM; concrete identifiers to be
-# filled in during milestone M5. Kept minimal but valid so the registry loads
-# it and the UI can show it as "planned / unverified".
+# STATUS: UNVERIFIED SCAFFOLD, same standing as the Brutale 910's 5SM
+# definition (see that file's header). K-line/KWP2000, same Marelli IAW
+# family as the 5SM — this is the "pure reuse" case from the M5 milestone:
+# the transport, protocol-kwp2000, and app-core layers work unmodified
+# against this file; only the data below is new. Nothing here has been
+# confirmed against a real Ducati yet.
 
 [ecu]
 id = "ducati-iaw-5am"
-name = "Marelli IAW 5AM (stub)"
+name = "Marelli IAW 5AM"
 manufacturer = "Ducati"
-models = []
+models = ["Monster 696 (2008-2014)", "Monster 1100 (2009-2010)", "Hypermotard 796/1100"]
 bus = "k-line"
 verified = false
-notes = "Stub pending M5. 3-pin FIAT-style diagnostic connector, K-line."
+notes = """
+3-pin FIAT-style diagnostic connector (same family as MV's), typically under
+the seat or near the battery. Only K-line, +12V, and GND are needed. Confirm
+pinout and connector location against the workshop manual before connecting.
+"""
 
 [init]
 method = "fast"
 ecu_address = 0x10
 tester_address = 0xF1
 baud = 10400
+
+[identification]
+request = [0x1A, 0x80]
+skip_bytes = 2
+
+[[channels]]
+key = "rpm"
+name = "Engine speed"
+unit = "rpm"
+request = [0x21, 0x01]
+offset = 2
+length = 2
+scale = 0.25
+verified = false
+
+[[channels]]
+key = "tps"
+name = "Throttle position"
+unit = "%"
+request = [0x21, 0x02]
+offset = 2
+length = 2
+scale = 0.0015259
+verified = false
+
+[[channels]]
+key = "ect"
+name = "Coolant temperature"
+unit = "°C"
+request = [0x21, 0x03]
+offset = 2
+length = 1
+scale = 1.0
+offset_value = -40.0
+verified = false
+
+[[channels]]
+key = "batt"
+name = "Battery voltage"
+unit = "V"
+request = [0x21, 0x05]
+offset = 2
+length = 1
+scale = 0.0625
+verified = false
+
+[dtc]
+read_request = [0x18, 0x02, 0xFF, 0x00]
+clear_request = [0x14, 0xFF, 0x00]
+
+[[dtc.table]]
+code = 0x0115
+description = "Throttle position sensor — signal implausible (placeholder)"
+
+[[dtc.table]]
+code = 0x0335
+description = "Crankshaft position sensor — no signal (placeholder)"
+
+[[routines]]
+key = "tps_reset"
+name = "Throttle position (TPS) reset"
+description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
+risk = "medium"
+request = [0x31, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 12.0
+max_battery_v = 14.8
+notes = "Throttle must be fully closed and untouched during the reset."
+
+[[routines]]
+key = "fuel_pump_test"
+name = "Fuel pump actuator test"
+description = "Run the fuel pump briefly to verify operation."
+risk = "low"
+request = [0x30, 0x01, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 11.5

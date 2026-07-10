@@ -10,6 +10,8 @@ use motodiag_kwp2000::framing::{parse_buffer, FrameCodec, ParseStatus};
 use motodiag_kwp2000::services::sid;
 use motodiag_transport::mock::{EcuLink, LineEvent};
 
+pub mod can;
+
 /// What the simulated ECU pretends to be.
 #[derive(Debug, Clone)]
 pub struct SimConfig {
@@ -49,6 +51,10 @@ impl Default for SimConfig {
 pub struct Simulator {
     config: SimConfig,
     initialized: bool,
+    /// Set right after answering a matching 5-baud address with sync+key
+    /// bytes; holds the inverted key-byte-2 we expect back as the ack. The
+    /// next raw byte received (not a KWP frame) is checked against this.
+    pending_5baud_ack: Option<u8>,
     dtcs: Vec<(u16, u8)>,
     /// Routine/actuator requests served so far (for test assertions).
     pub routine_log: Vec<Vec<u8>>,
@@ -69,6 +75,7 @@ impl Simulator {
         Self {
             config,
             initialized: false,
+            pending_5baud_ack: None,
             dtcs,
             routine_log: Vec::new(),
             rpm,
@@ -84,6 +91,30 @@ impl Simulator {
         // A break pulse resets protocol state; the ECU then waits for
         // StartCommunication.
         self.initialized = false;
+        self.pending_5baud_ack = None;
+    }
+
+    /// Handle a 5-baud slow-init address. Real ECUs only answer when the
+    /// address matches theirs; a mismatch is silently ignored, same as here.
+    /// Returns the sync (0x55) + key bytes response to send back.
+    pub fn handle_5baud_address(&mut self, address: u8) -> Option<Vec<u8>> {
+        if address != self.config.ecu_address {
+            return None;
+        }
+        let (kb1, kb2) = self.config.key_bytes;
+        self.pending_5baud_ack = Some(!kb2);
+        Some(vec![0x55, kb1, kb2])
+    }
+
+    /// Handle the raw ack byte that follows a 5-baud address exchange.
+    /// Returns the inverted-address byte to send back on success.
+    pub fn handle_5baud_ack(&mut self, byte: u8) -> Option<u8> {
+        let expected = self.pending_5baud_ack.take()?;
+        if byte != expected {
+            return None;
+        }
+        self.initialized = true;
+        Some(!self.config.ecu_address)
     }
 
     /// Handle one request payload addressed to us; returns the response
@@ -193,6 +224,22 @@ pub fn run_on_link(mut sim: Simulator, link: EcuLink) -> Simulator {
                 buf.clear();
             }
             Ok(LineEvent::BaudChange(_)) => buf.clear(),
+            Ok(LineEvent::FiveBaudAddress(addr)) => {
+                buf.clear();
+                if let Some(response) = sim.handle_5baud_address(addr) {
+                    if link.send_bytes(&response).is_err() {
+                        return sim;
+                    }
+                }
+            }
+            Ok(LineEvent::Byte(b)) if sim.pending_5baud_ack.is_some() => {
+                // This byte is the 5-baud handshake's ack, not KWP frame data.
+                if let Some(response) = sim.handle_5baud_ack(b) {
+                    if link.send_bytes(&[response]).is_err() {
+                        return sim;
+                    }
+                }
+            }
             Ok(LineEvent::Byte(b)) => {
                 buf.push(b);
                 match parse_buffer(&buf) {
@@ -254,10 +301,67 @@ mod tests {
     }
 
     #[test]
+    fn five_baud_handshake_matching_address() {
+        let mut sim = Simulator::new(SimConfig::default());
+        let resp = sim.handle_5baud_address(0x10).expect("address matches");
+        assert_eq!(resp, vec![0x55, 0xEA, 0x8F]);
+
+        // Ack with the inverted key byte 2.
+        let ack = sim.handle_5baud_ack(!0x8F).expect("ack matches");
+        assert_eq!(ack, !0x10);
+
+        // The ECU should now be initialized, same as after fast init.
+        let ident = sim.handle_request(&[0x1A, 0x80]).expect("now initialized");
+        assert_eq!(&ident[2..], b"IAW 5SM SIM v0.1");
+    }
+
+    #[test]
+    fn five_baud_handshake_wrong_address_is_ignored() {
+        let mut sim = Simulator::new(SimConfig::default());
+        assert_eq!(sim.handle_5baud_address(0x55), None);
+        // No pending ack was armed, so any ack byte is rejected.
+        assert_eq!(sim.handle_5baud_ack(0x00), None);
+    }
+
+    #[test]
+    fn five_baud_handshake_wrong_ack_does_not_initialize() {
+        let mut sim = Simulator::new(SimConfig::default());
+        sim.handle_5baud_address(0x10).unwrap();
+        assert_eq!(sim.handle_5baud_ack(0x00), None);
+        assert_eq!(sim.handle_request(&[0x1A, 0x80]), None); // still not initialized
+    }
+
+    #[test]
     fn unknown_service_gets_negative_response() {
         let mut sim = Simulator::new(SimConfig::default());
         sim.handle_request(&[0x81]).unwrap();
         let resp = sim.handle_request(&[0x27, 0x01]).unwrap();
         assert_eq!(resp, vec![0x7F, 0x27, 0x11]);
+    }
+
+    #[test]
+    fn five_baud_init_over_the_mock_link_via_protocol_layer() {
+        use motodiag_kwp2000::init::{slow_init_5baud, SlowInitConfig};
+        use motodiag_kwp2000::timing::TimingParams;
+        use motodiag_transport::mock;
+
+        let (mut tester, ecu) = mock::pair();
+        let handle = spawn_on_link(Simulator::new(SimConfig::default()), ecu);
+
+        let outcome = slow_init_5baud(
+            &mut tester,
+            0x10,
+            &TimingParams::default(),
+            &SlowInitConfig {
+                bit_time: Duration::from_millis(1),
+                sync_timeout: Duration::from_millis(200),
+            },
+        )
+        .expect("5-baud init succeeds against the simulator");
+        assert_eq!(outcome.key_bytes, Some((0xEA, 0x8F)));
+
+        drop(tester);
+        let sim = handle.join().unwrap();
+        assert!(sim.dtc_count() > 0); // sanity: sim ran and kept its state
     }
 }

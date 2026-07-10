@@ -53,11 +53,18 @@ Lets you validate timing and sniff other tools without touching the bike:
 ## Later — CAN-era Ducatis (milestone M5)
 
 - **OBDLink SX/EX** (STN11xx serial AT command set): proven with Ducati DDA
-  tooling (MelcoDiag), appears as a USB serial device on macOS.
+  tooling (MelcoDiag), appears as a USB serial device on macOS. Software side:
+  `crates/protocol-can/src/elm327.rs`.
 - **CANable 2.0** (SLCAN firmware): raw CAN frames over serial; cleaner for
-  development.
+  development. Software side: `crates/protocol-can/src/slcan.rs`.
 - **Ducati adapters**: 3-pin K-line adapter (pre-~2009 bikes) and 4-pin DDA →
   OBD-II adapter (Multistrada 1200 era onward), e.g. from Lonelec/TunerTools.
+
+Both transports' CAN framing (ISO-TP segmentation, UDS service layer) are
+built and tested against an in-memory mock bus — see
+`crates/ecu-sim/tests/can_session.rs`. The serial-facing halves of
+`SlcanTransport`/`Elm327Transport` themselves are, like `serial_vcp` for
+K-line, untested against real hardware until one of these adapters is in hand.
 
 macOS has no SocketCAN; both devices above talk serial, which the transport
 layer abstracts anyway.

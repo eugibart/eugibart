@@ -24,7 +24,12 @@ just documentation.
 4. **No map read/write anywhere in v1.** This is not a hidden feature — it is
    structurally absent:
    - The KWP service layer defines no memory/download services (0x23, 0x34–0x36, 0x3D).
-   - The definition-file validator rejects any request using those service IDs.
+   - The UDS/CAN service layer (`crates/protocol-can/src/uds.rs`, M5
+     groundwork) likewise omits SecurityAccess (0x27) and
+     WriteDataByIdentifier (0x2E) alongside the same memory/transfer SIDs —
+     the same posture on both buses.
+   - The definition-file validator's allowed-SID list (`crates/ecu-defs`)
+     rejects any request using those service IDs, for either bus.
 
 5. **Unverified means labeled.** Definitions, channels, and routines carry a
    `verified` flag; anything not yet confirmed against a real ECU is shown

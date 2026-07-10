@@ -4,11 +4,12 @@
 //! fixtures (see `fixtures/`), and CSV logs feed later analysis.
 
 use std::fs::File;
-use std::io::{BufWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use motodiag_kwp2000::session::{Direction, TraceHook};
+use motodiag_transport::trace::{TraceEvent, TraceSink};
 
 use crate::live_data::{now_ms, Reading};
 use crate::Result;
@@ -47,6 +48,45 @@ impl TraceLogger {
             }
         })
     }
+}
+
+/// Writes a byte-level [`TraceEvent`] stream (see `motodiag_transport::trace`)
+/// to a JSONL file, one event per line. Unlike `TraceLogger` above, wrapping
+/// the raw transport in a `TracingTransport` fed by this sink captures the
+/// *entire* session including the init handshake, which makes the resulting
+/// file replayable end-to-end via `motodiag_transport::replay::ReplayTransport`.
+pub struct WireTraceRecorder {
+    out: BufWriter<File>,
+}
+
+impl WireTraceRecorder {
+    pub fn create(path: &Path) -> Result<Self> {
+        Ok(Self {
+            out: BufWriter::new(File::create(path)?),
+        })
+    }
+}
+
+impl TraceSink for WireTraceRecorder {
+    fn record(&mut self, event: TraceEvent) {
+        if let Ok(line) = serde_json::to_string(&event) {
+            let _ = writeln!(self.out, "{line}");
+            let _ = self.out.flush();
+        }
+    }
+}
+
+/// Load a wire trace previously written by [`WireTraceRecorder`], e.g. to
+/// feed `ReplayTransport::from_events`.
+pub fn load_wire_trace(path: &Path) -> Result<Vec<TraceEvent>> {
+    let reader = BufReader::new(File::open(path)?);
+    reader
+        .lines()
+        .map(|line| {
+            let line = line?;
+            serde_json::from_str(&line).map_err(|e| crate::AppError::Io(std::io::Error::other(e)))
+        })
+        .collect()
 }
 
 /// CSV log of live-data readings: `timestamp_ms,key,name,value,unit`.

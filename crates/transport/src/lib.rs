@@ -10,8 +10,10 @@
 //! the protocol layer, so protocol code never sees its own transmissions.
 
 pub mod mock;
+pub mod replay;
 #[cfg(feature = "vcp")]
 pub mod serial_vcp;
+pub mod trace;
 
 use std::time::Duration;
 
@@ -51,6 +53,29 @@ pub trait KLineTransport: Send {
 
     /// Discard anything already buffered on the receive side.
     fn flush_input(&mut self) -> Result<()>;
+
+    /// Bit-bang a 5-baud slow-init address byte: start bit (low), 8 data
+    /// bits LSB-first (0 = low pulse via `send_break`, 1 = idle/silent), stop
+    /// bit (idle). This is the real electrical behavior and the default any
+    /// hardware-backed transport gets for free.
+    ///
+    /// A "1" bit is indistinguishable from silence/idle bus — there is no
+    /// event to send for it — which means a passive listener (the in-memory
+    /// mock link, or a replay) cannot reconstruct the address byte from break
+    /// timing alone. Those transports override this method to exchange the
+    /// resolved address value directly instead of simulating the waveform.
+    fn send_5baud_address(&mut self, address: u8, bit_time: Duration) -> Result<()> {
+        self.send_break(bit_time)?; // start bit
+        for i in 0..8 {
+            if address & (1 << i) == 0 {
+                self.send_break(bit_time)?;
+            } else {
+                std::thread::sleep(bit_time);
+            }
+        }
+        std::thread::sleep(bit_time); // stop bit
+        Ok(())
+    }
 
     /// Read exactly `n` bytes. `first_byte_timeout` bounds the wait for the
     /// first byte; `inter_byte_timeout` (KWP P1) bounds each subsequent gap.

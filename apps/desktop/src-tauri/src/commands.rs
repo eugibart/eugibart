@@ -144,6 +144,12 @@ pub async fn connect(
         .get(&definition_id)
         .ok_or_else(|| format!("unknown ECU definition '{definition_id}'"))?
         .clone();
+    let init = def.init.clone().ok_or_else(|| {
+        format!(
+            "'{definition_id}' is a CAN-bus ECU definition; the desktop app only supports \
+             K-line/KWP2000 connections so far (see crates/protocol-can for the CAN groundwork)"
+        )
+    })?;
 
     let mut sim_thread = None;
     let transport: Box<dyn KLineTransport> = if port == SIMULATOR_PORT {
@@ -155,7 +161,7 @@ pub async fn connect(
         Box::new(tester)
     } else {
         Box::new(
-            motodiag_transport::serial_vcp::SerialKLine::open(&port, def.init.baud)
+            motodiag_transport::serial_vcp::SerialKLine::open(&port, init.baud)
                 .map_err(|e| format!("failed to open {port}: {e}"))?,
         )
     };

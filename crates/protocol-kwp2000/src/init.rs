@@ -99,10 +99,10 @@ impl Default for SlowInitConfig {
 
 /// ISO 9141 / KWP2000 5-baud slow init.
 ///
-/// The target address is bit-banged at 5 baud (start bit + 8 data bits LSB
-/// first + stop bit, 200 ms each) by holding the line low via break for 0-bits.
-/// The ECU answers with 0x55 sync at the working baud rate, two key bytes, and
-/// expects the inverted second key byte back.
+/// The target address is sent at 5 baud (200 ms/bit by default); see
+/// `KLineTransport::send_5baud_address` for how that's realized per
+/// transport. The ECU answers with 0x55 sync at the working baud rate, two
+/// key bytes, and expects the inverted second key byte back.
 pub fn slow_init_5baud(
     transport: &mut dyn KLineTransport,
     address: u8,
@@ -110,19 +110,7 @@ pub fn slow_init_5baud(
     cfg: &SlowInitConfig,
 ) -> Result<InitOutcome> {
     transport.flush_input()?;
-
-    // Start bit (dominant/low).
-    transport.send_break(cfg.bit_time)?;
-    // Data bits, LSB first: 0 = low (break), 1 = high (idle).
-    for i in 0..8 {
-        if address & (1 << i) == 0 {
-            transport.send_break(cfg.bit_time)?;
-        } else {
-            std::thread::sleep(cfg.bit_time);
-        }
-    }
-    // Stop bit (recessive/high).
-    std::thread::sleep(cfg.bit_time);
+    transport.send_5baud_address(address, cfg.bit_time)?;
 
     let sync = transport.read_byte(cfg.sync_timeout)?;
     if sync != 0x55 {

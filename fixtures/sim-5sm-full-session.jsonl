@@ -1,0 +1,54 @@
+{"t_ms":1783722030566,"dir":"tx","kind":{"kind":"break","ms":1}}
+{"t_ms":1783722030567,"dir":"tx","kind":{"kind":"bytes","hex":"81 10 F1 81 03"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"83"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"F1"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"10"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"C1"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"EA"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"8F"}}
+{"t_ms":1783722030567,"dir":"rx","kind":{"kind":"bytes","hex":"BE"}}
+{"t_ms":1783722030622,"dir":"tx","kind":{"kind":"bytes","hex":"82 10 F1 1A 80 1D"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"92"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"F1"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"10"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"5A"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"80"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"49"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"41"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"57"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"20"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"35"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"53"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"4D"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"20"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"53"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"49"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"4D"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"20"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"76"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"30"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"2E"}}
+{"t_ms":1783722030622,"dir":"rx","kind":{"kind":"bytes","hex":"31"}}
+{"t_ms":1783722030623,"dir":"rx","kind":{"kind":"bytes","hex":"71"}}
+{"t_ms":1783722030678,"dir":"tx","kind":{"kind":"bytes","hex":"84 10 F1 18 02 FF 00 9E"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"88"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"F1"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"10"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"58"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"02"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"01"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"15"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"60"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"01"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"20"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"20"}}
+{"t_ms":1783722030678,"dir":"rx","kind":{"kind":"bytes","hex":"9A"}}
+{"t_ms":1783722030733,"dir":"tx","kind":{"kind":"bytes","hex":"82 10 F1 21 01 A5"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"84"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"F1"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"10"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"61"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"01"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"14"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"1C"}}
+{"t_ms":1783722030733,"dir":"rx","kind":{"kind":"bytes","hex":"17"}}

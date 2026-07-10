@@ -1,0 +1,78 @@
+# Ducati — Marelli MC3/7SM-era ECU over CAN (e.g. Multistrada 1200, ~2010+)
+#
+# STATUS: SCHEMA DEMONSTRATION STUB, not yet wired to a working session.
+# Unlike the K-line definitions in this directory, there is no app-core
+# support for CAN/UDS sessions yet (see crates/protocol-can — M5 groundwork:
+# ISO-TP + UDS service layer + a simulated CAN ECU, all tested independently,
+# but not yet connected to `DiagSession`/the desktop UI). This file exists to
+# prove the ecu-defs schema itself is bus-agnostic — the same Channel/DtcConfig
+# /Routine shapes work for byte sequences that happen to be UDS requests
+# instead of KWP2000 ones. CAN IDs, DIDs, and everything else below are
+# illustrative placeholders, not verified against any real ECU or protocol
+# trace.
+
+[ecu]
+id = "ducati-mc3-multistrada-can"
+name = "Marelli MC3/7SM (CAN, Multistrada-era)"
+manufacturer = "Ducati"
+models = ["Multistrada 1200 (2010+)"]
+bus = "can"
+verified = false
+notes = """
+4-pin DDA (Ducati Diagnostic Adapter) connector, adapts to OBD-II-style CAN.
+Requires a CAN-capable interface (e.g. OBDLink SX/EX or CANable) rather than
+a K-line cable. Not yet exercised against real hardware or even a full
+UDS DiagSession — see crates/protocol-can for the tested-but-unwired protocol
+layer this will eventually build on.
+"""
+
+[can]
+tx_id = 0x7E0
+rx_id = 0x7E8
+
+[identification]
+# UDS ReadDataByIdentifier (SID 0x22), DID 0xF190 = VIN (illustrative; the
+# real ECU-identification DID for this platform is unconfirmed).
+request = [0x22, 0xF1, 0x90]
+skip_bytes = 3
+
+[[channels]]
+key = "rpm"
+name = "Engine speed"
+unit = "rpm"
+request = [0x22, 0xF1, 0x0C]
+offset = 3
+length = 2
+scale = 0.25
+verified = false
+
+[[channels]]
+key = "batt"
+name = "Battery voltage"
+unit = "V"
+request = [0x22, 0xF1, 0x0D]
+offset = 3
+length = 1
+scale = 0.0625
+verified = false
+
+[dtc]
+# UDS ReadDTCInformation (SID 0x19), reportDTCByStatusMask sub-function,
+# mask 0xFF = all statuses.
+read_request = [0x19, 0x02, 0xFF]
+clear_request = [0x14, 0xFF, 0xFF, 0xFF]
+
+[[dtc.table]]
+code = 0x0335
+description = "Crankshaft position sensor — no signal (placeholder)"
+
+[[routines]]
+key = "fuel_pump_test"
+name = "Fuel pump actuator test"
+description = "Run the fuel pump briefly to verify operation."
+risk = "low"
+request = [0x2F, 0xF1, 0x50, 0x03]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 11.5

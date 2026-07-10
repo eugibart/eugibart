@@ -16,6 +16,10 @@ pub enum LineEvent {
     /// Bus held dominant for the given duration.
     Break(Duration),
     BaudChange(u32),
+    /// A resolved 5-baud slow-init address. Stands in for the real bit-banged
+    /// waveform (see `KLineTransport::send_5baud_address`), which a passive
+    /// listener can't reconstruct since a "1" bit is silent.
+    FiveBaudAddress(u8),
 }
 
 /// Tester-side endpoint. Implements [`KLineTransport`].
@@ -89,6 +93,14 @@ impl KLineTransport for MockKLine {
     fn flush_input(&mut self) -> Result<()> {
         while self.rx.try_recv().is_ok() {}
         Ok(())
+    }
+
+    fn send_5baud_address(&mut self, address: u8, _bit_time: Duration) -> Result<()> {
+        // No real waveform to simulate: hand the ECU-side listener the
+        // resolved address directly (see `LineEvent::FiveBaudAddress`).
+        self.tx
+            .send(LineEvent::FiveBaudAddress(address))
+            .map_err(|_| TransportError::Closed)
     }
 }
 

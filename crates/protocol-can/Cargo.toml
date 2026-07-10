@@ -1,0 +1,19 @@
+[package]
+name = "motodiag-protocol-can"
+description = "CAN transport, ISO-TP segmentation, and UDS (ISO 14229) protocol layer for MotoDiag's M5 CAN groundwork"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = ["vcp"]
+# Serial (SLCAN/ELM327 over USB virtual COM port) backends. Off in minimal
+# builds/tests, same convention as motodiag-transport's "vcp" feature.
+vcp = ["dep:serialport"]
+
+[dependencies]
+motodiag-kwp2000 = { workspace = true }
+thiserror.workspace = true
+tracing.workspace = true
+serialport = { workspace = true, optional = true }
