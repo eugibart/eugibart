@@ -1,0 +1,17 @@
+[package]
+name = "motodiag-transport"
+description = "Physical-layer transports (K-line serial, mock link) for MotoDiag"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[features]
+default = ["vcp"]
+# Serial (USB virtual COM port) backend. Off in minimal builds/tests.
+vcp = ["dep:serialport"]
+
+[dependencies]
+thiserror.workspace = true
+tracing.workspace = true
+serialport = { workspace = true, optional = true }

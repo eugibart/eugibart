@@ -1,0 +1,15 @@
+# Rust
+target/
+
+# Tauri generated schemas
+apps/desktop/src-tauri/gen/
+
+# Node
+node_modules/
+apps/desktop/dist/
+
+# OS
+.DS_Store
+
+# Logs and local captures (commit curated traces to fixtures/ deliberately)
+*.log

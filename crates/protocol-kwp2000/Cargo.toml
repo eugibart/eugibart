@@ -1,0 +1,12 @@
+[package]
+name = "motodiag-kwp2000"
+description = "ISO 14230 (KWP2000) protocol layer: init, framing, timing, session management"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+motodiag-transport = { workspace = true }
+thiserror.workspace = true
+tracing.workspace = true

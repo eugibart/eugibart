@@ -1,0 +1,19 @@
+[package]
+name = "motodiag-ecu-sim"
+description = "Simulated Marelli-style KWP2000 ECU for development and tests without a bike"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+motodiag-transport = { workspace = true }
+motodiag-kwp2000 = { workspace = true }
+tracing.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+serialport.workspace = true
+
+[[bin]]
+name = "ecu-sim-pty"
+path = "src/bin/ecu_sim_pty.rs"

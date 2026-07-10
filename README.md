@@ -3,6 +3,7 @@
 - 🌱 I’m currently learning all the latest cool things.
 - 💞️ I’m looking to collaborate on various projects.
 - 📫 How to reach me ... TBD
+- 🏍️ Currently building [MotoDiag](MOTODIAG.md) — open-source diagnostics for MV Agusta & Ducati motorbikes
 
 <!---
 eugibart/eugibart is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.

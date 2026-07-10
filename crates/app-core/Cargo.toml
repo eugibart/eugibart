@@ -1,0 +1,20 @@
+[package]
+name = "motodiag-app-core"
+description = "Diagnostic session orchestration: connect, DTCs, live data, service ops, safety, logging"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+motodiag-transport = { workspace = true }
+motodiag-kwp2000 = { workspace = true }
+motodiag-ecu-defs = { workspace = true }
+thiserror.workspace = true
+tracing.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+csv.workspace = true
+
+[dev-dependencies]
+motodiag-ecu-sim = { workspace = true }

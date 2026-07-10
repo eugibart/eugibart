@@ -1,0 +1,20 @@
+# Ducati — Magneti Marelli IAW 5AM (e.g. Monster 696/1100, Hypermotard era)
+#
+# STATUS: STUB. K-line/KWP2000 like the MV 5SM; concrete identifiers to be
+# filled in during milestone M5. Kept minimal but valid so the registry loads
+# it and the UI can show it as "planned / unverified".
+
+[ecu]
+id = "ducati-iaw-5am"
+name = "Marelli IAW 5AM (stub)"
+manufacturer = "Ducati"
+models = []
+bus = "k-line"
+verified = false
+notes = "Stub pending M5. 3-pin FIAT-style diagnostic connector, K-line."
+
+[init]
+method = "fast"
+ecu_address = 0x10
+tester_address = 0xF1
+baud = 10400

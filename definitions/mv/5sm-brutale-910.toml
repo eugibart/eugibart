@@ -1,0 +1,172 @@
+# MV Agusta Brutale 910 — Magneti Marelli IAW 5SM
+#
+# STATUS: UNVERIFIED SCAFFOLD. The bus type, init method, and baud rate follow
+# well-documented Marelli IAW practice (JPDiag/GuzziDiag family), but the
+# addresses, local identifiers, scalings, and routine byte sequences below are
+# educated placeholders. Each carries `verified = false` until it has been
+# confirmed against a real Brutale 910 — by sniffing JPDiag with a serial tap
+# and by direct probing (milestones M1/M4). Do not trust a value until its
+# flag flips.
+
+[ecu]
+id = "mv-5sm-brutale-910"
+name = "Marelli IAW 5SM (Brutale 910)"
+manufacturer = "MV Agusta"
+models = ["Brutale 910 (2005-2008)", "Brutale 910R"]
+bus = "k-line"
+verified = false
+notes = """
+Diagnostic connector: 3-pin (K-line, +12V, GND) reported under the tank on the
+right side; some bikes may use the 4-pin connector under the seat instead.
+Verify against the workshop manual wiring diagram before first connection —
+see docs/MV-PINOUT.md.
+"""
+
+[init]
+method = "fast"       # KWP2000 fast init (25 ms low / 25 ms high wake-up)
+ecu_address = 0x10    # placeholder: common Marelli engine-ECU address
+tester_address = 0xF1
+baud = 10400
+
+[timing]
+# Start from ISO defaults; tighten/loosen from real traces in M1.
+
+[identification]
+request = [0x1A, 0x80]  # ReadEcuIdentification, all data tables
+skip_bytes = 2
+
+# ---------------------------------------------------------------------------
+# Live data channels (ReadDataByLocalIdentifier 0x21).
+# Local IDs and scalings are placeholders pending M1/M2 discovery.
+# ---------------------------------------------------------------------------
+
+[[channels]]
+key = "rpm"
+name = "Engine speed"
+unit = "rpm"
+request = [0x21, 0x01]
+offset = 2
+length = 2
+scale = 0.25
+verified = false
+
+[[channels]]
+key = "tps"
+name = "Throttle position"
+unit = "%"
+request = [0x21, 0x02]
+offset = 2
+length = 2
+scale = 0.0015259  # 100 / 65535
+verified = false
+
+[[channels]]
+key = "ect"
+name = "Coolant temperature"
+unit = "°C"
+request = [0x21, 0x03]
+offset = 2
+length = 1
+scale = 1.0
+offset_value = -40.0
+verified = false
+
+[[channels]]
+key = "iat"
+name = "Intake air temperature"
+unit = "°C"
+request = [0x21, 0x04]
+offset = 2
+length = 1
+scale = 1.0
+offset_value = -40.0
+verified = false
+
+[[channels]]
+key = "batt"
+name = "Battery voltage"
+unit = "V"
+request = [0x21, 0x05]
+offset = 2
+length = 1
+scale = 0.0625
+verified = false
+
+[[channels]]
+key = "map"
+name = "Manifold pressure"
+unit = "mbar"
+request = [0x21, 0x06]
+offset = 2
+length = 2
+scale = 1.0
+verified = false
+
+# ---------------------------------------------------------------------------
+# Fault codes
+# ---------------------------------------------------------------------------
+
+[dtc]
+read_request = [0x18, 0x02, 0xFF, 0x00]  # ReadDTCByStatus: all identified DTCs
+clear_request = [0x14, 0xFF, 0x00]       # ClearDiagnosticInformation: all groups
+
+# DTC meanings to be populated from the workshop manual / JPDiag captures.
+[[dtc.table]]
+code = 0x0115
+description = "Throttle position sensor — signal implausible (placeholder)"
+
+[[dtc.table]]
+code = 0x0120
+description = "Coolant temperature sensor — open/short circuit (placeholder)"
+
+# ---------------------------------------------------------------------------
+# Service routines. Requests are placeholders until sniffed from JPDiag (M4);
+# the safety preconditions are enforced by app-core regardless.
+# ---------------------------------------------------------------------------
+
+[[routines]]
+key = "tps_reset"
+name = "Throttle position (TPS) reset"
+description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
+risk = "medium"
+request = [0x31, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 12.0
+max_battery_v = 14.8
+notes = "Throttle must be fully closed and untouched during the reset."
+
+[[routines]]
+key = "fuel_pump_test"
+name = "Fuel pump actuator test"
+description = "Run the fuel pump briefly to verify operation."
+risk = "low"
+request = [0x30, 0x01, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 11.5
+
+[[routines]]
+key = "cooling_fan_test"
+name = "Cooling fan actuator test"
+description = "Switch the radiator fan on briefly."
+risk = "low"
+request = [0x30, 0x02, 0x01]
+verified = false
+[routines.preconditions]
+engine_must_be_off = true
+min_battery_v = 11.5
+
+[[routines]]
+key = "co_trim"
+name = "CO trim adjustment"
+description = "Adjust idle CO trim. Persisted by the ECU — follow the workshop procedure."
+risk = "high"
+request = [0x31, 0x02]
+verified = false
+[routines.preconditions]
+min_battery_v = 12.0
+max_battery_v = 14.8
+notes = "Engine at operating temperature, exhaust gas analyzer recommended."

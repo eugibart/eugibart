@@ -1,0 +1,19 @@
+# Ducati — Magneti Marelli IAW 59M (e.g. 748/996/998, early Monster/SS)
+#
+# STATUS: STUB. Older K-line generation; may require 5-baud slow init.
+# Concrete identifiers to be filled in during milestone M5.
+
+[ecu]
+id = "ducati-iaw-59m"
+name = "Marelli IAW 59M (stub)"
+manufacturer = "Ducati"
+models = []
+bus = "k-line"
+verified = false
+notes = "Stub pending M5. Slow init assumption to be confirmed on hardware."
+
+[init]
+method = "slow-5-baud"
+ecu_address = 0x10
+tester_address = 0xF1
+baud = 10400
