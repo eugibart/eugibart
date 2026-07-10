@@ -36,6 +36,39 @@ pub struct DiagSession {
     service_mode: bool,
 }
 
+/// Run the K-line init sequence from an ECU definition and return a live
+/// [`KwpSession`], ready for requests. Shared by [`DiagSession::connect`] and
+/// `discovery::run_discovery`, which needs a session but not the rest of
+/// `DiagSession`'s definition-shaped API.
+pub(crate) fn init_kwp_session(
+    mut transport: Box<dyn KLineTransport>,
+    def: &EcuDefinition,
+    options: &ConnectOptions,
+) -> Result<KwpSession> {
+    let init = def
+        .init
+        .clone()
+        .ok_or_else(|| AppError::NotKLine(def.ecu.id.clone()))?;
+    let codec = FrameCodec {
+        addressing: Some((init.ecu_address, init.tester_address)),
+        separate_length_byte: init.separate_length_byte,
+    };
+    let timing = timing_from_def(def);
+
+    match init.method {
+        InitMethod::Fast => {
+            let cfg = options.fast_init.clone().unwrap_or_default();
+            fast_init(transport.as_mut(), &codec, &timing, &cfg)?;
+        }
+        InitMethod::Slow5Baud => {
+            let cfg = options.slow_init.clone().unwrap_or_default();
+            slow_init_5baud(transport.as_mut(), init.ecu_address, &timing, &cfg)?;
+        }
+    }
+
+    Ok(KwpSession::new(transport, codec, timing))
+}
+
 impl DiagSession {
     /// Initialize the bus per the ECU definition and read the ECU identity.
     ///
@@ -44,32 +77,11 @@ impl DiagSession {
     /// CAN sessions are a separate, not-yet-wired-up path (see
     /// `crates/protocol-can`, milestone M5 groundwork).
     pub fn connect(
-        mut transport: Box<dyn KLineTransport>,
+        transport: Box<dyn KLineTransport>,
         def: EcuDefinition,
         options: ConnectOptions,
     ) -> Result<Self> {
-        let init = def
-            .init
-            .clone()
-            .ok_or_else(|| AppError::NotKLine(def.ecu.id.clone()))?;
-        let codec = FrameCodec {
-            addressing: Some((init.ecu_address, init.tester_address)),
-            separate_length_byte: init.separate_length_byte,
-        };
-        let timing = timing_from_def(&def);
-
-        match init.method {
-            InitMethod::Fast => {
-                let cfg = options.fast_init.unwrap_or_default();
-                fast_init(transport.as_mut(), &codec, &timing, &cfg)?;
-            }
-            InitMethod::Slow5Baud => {
-                let cfg = options.slow_init.unwrap_or_default();
-                slow_init_5baud(transport.as_mut(), init.ecu_address, &timing, &cfg)?;
-            }
-        }
-
-        let mut kwp = KwpSession::new(transport, codec, timing);
+        let mut kwp = init_kwp_session(transport, &def, &options)?;
         if let Some(trace) = options.trace {
             kwp.set_trace_hook(trace);
         }

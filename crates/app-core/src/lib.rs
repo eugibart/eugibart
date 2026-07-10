@@ -4,6 +4,7 @@
 //! definition, runs the right init, and exposes the operations the UI needs —
 //! always through the safety interlocks in [`safety`].
 
+pub mod discovery;
 pub mod dtc;
 pub mod live_data;
 pub mod logging;

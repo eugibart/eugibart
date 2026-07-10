@@ -23,6 +23,10 @@ bike yet. This page exists to be filled in during milestone M1.
      (pulled up inside the ECU) and not be at 0 Ω to ground or battery.
 4. Record everything here: connector photos, pin numbering, wire colors,
    measured voltages.
+5. Once wired up, run `motodiag-discover` (see docs/PROTOCOL.md) against the
+   real bike — no other diagnostic software required. A successful connect
+   and ECU identification response confirms the pinout; garbage or no
+   response at all is the first sign something's wired wrong.
 
 ## Findings (fill in)
 

@@ -34,6 +34,30 @@ npm run tauri dev
 There is also a pty-based simulator for testing any serial client:
 `cargo run -p motodiag-ecu-sim --bin ecu-sim-pty`.
 
+## Discovering unverified values — no JPDiag/TuneECU/VDSTS required
+
+Every local identifier, DTC format, and identification option byte in the
+shipped definitions is a placeholder pending confirmation. `motodiag-discover`
+asks the ECU directly instead of requiring a copy of some other tool to sniff:
+
+```sh
+# Against the simulator (no hardware needed) — a fast way to see the output shape
+cargo run -p motodiag-app-core --bin motodiag-discover -- simulator mv-5sm-brutale-910
+
+# Against the real bike once you have a cable (see docs/HARDWARE.md)
+cargo run -p motodiag-app-core --bin motodiag-discover -- \
+    /dev/cu.usbserial-A7043NRK mv-5sm-brutale-910 --trace brutale-discovery.jsonl
+```
+
+It brute-forces `ReadDataByLocalIdentifier` across the ID space (narrow it
+with `--range 01:20` once you have a hunch), tries several
+`ReadEcuIdentification`/`ReadDTCByStatus` variants, flags local IDs whose
+value changed between two quick polls (a strong hint they're live sensor data
+rather than static config), and — with `--trace` — writes the whole run as a
+wire-trace fixture in the same format `ReplayTransport` consumes. One run
+against the real bike both tells you what's actually on each local ID *and*
+becomes a permanent regression fixture.
+
 The CAN/UDS side (M5 groundwork, not yet wired to the desktop UI) has its own
 in-memory bench simulator, exercised end-to-end in
 `crates/ecu-sim/tests/can_session.rs`.

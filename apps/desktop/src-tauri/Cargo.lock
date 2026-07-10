@@ -1787,6 +1787,7 @@ version = "0.1.0"
 dependencies = [
  "csv",
  "motodiag-ecu-defs",
+ "motodiag-ecu-sim",
  "motodiag-kwp2000",
  "motodiag-transport",
  "serde",

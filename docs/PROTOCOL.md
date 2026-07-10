@@ -83,15 +83,35 @@ into permanent regression tests.
 
 ## Discovery plan (M1/M4)
 
-1. Sniff JPDiag (Windows) talking to the real 5SM through a passive K-line
-   tap + logic analyzer; record init, ident, DTC, live-data and TPS-reset
-   exchanges.
+**Primary path — ask the ECU directly, no other tool required.** Run
+`motodiag-discover` against the real bike:
+
+```sh
+cargo run -p motodiag-app-core --bin motodiag-discover -- \
+    /dev/cu.usbserial-XXXX mv-5sm-brutale-910 --trace brutale-discovery.jsonl
+```
+
+It brute-forces `ReadDataByLocalIdentifier` (flagging IDs whose value changes
+between two quick polls — a strong hint they're live sensor data), tries
+several `ReadEcuIdentification`/`ReadDTCByStatus` variants, and writes the
+whole run as a wire-trace fixture in the same run. See
+`crates/app-core/src/discovery.rs` and `crates/app-core/src/bin/discover.rs`.
+
+**Secondary — cross-reference against another tool's traffic**, useful once
+`motodiag-discover` has narrowed down candidate local IDs and you want to
+confirm a scaling, or for service routines (TPS reset, CO trim) that need a
+specific byte sequence rather than just "what's on this ID":
+
+1. Sniff JPDiag or TuneECU (Windows) talking to the real 5SM through a
+   passive K-line tap + logic analyzer; record init, ident, DTC, live-data
+   and TPS-reset exchanges.
 2. Wrap the serial transport in `TracingTransport` while doing your own M1/M4
    testing and commit interesting sessions under `fixtures/` (see
    `fixtures/README.md`) — they double as regression tests via
    `ReplayTransport`.
-3. Update `definitions/mv/5sm-brutale-910.toml` local IDs/scalings and flip
-   `verified` flags as facts land.
+
+**Either way**: update `definitions/mv/5sm-brutale-910.toml` local
+IDs/scalings and flip `verified` flags as facts land.
 
 ## UDS over CAN (M5 groundwork)
 

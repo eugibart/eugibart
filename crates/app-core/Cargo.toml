@@ -10,11 +10,15 @@ repository.workspace = true
 motodiag-transport = { workspace = true }
 motodiag-kwp2000 = { workspace = true }
 motodiag-ecu-defs = { workspace = true }
+# Only used by the motodiag-discover bin's "simulator" port and by tests;
+# a normal (not dev-) dependency because bins don't get dev-dependencies.
+motodiag-ecu-sim = { workspace = true }
 thiserror.workspace = true
 tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 csv.workspace = true
 
-[dev-dependencies]
-motodiag-ecu-sim = { workspace = true }
+[[bin]]
+name = "motodiag-discover"
+path = "src/bin/discover.rs"
