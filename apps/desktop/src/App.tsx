@@ -20,6 +20,15 @@ const TABS: { id: Tab; label: string; needsConnection: boolean }[] = [
 ];
 
 const SHORTCUTS_KEY = "motodiag-shortcuts";
+const THEME_KEY = "motodiag-theme";
+
+type Theme = "dark" | "light";
+
+function initialTheme(): Theme {
+  const stored = localStorage.getItem(THEME_KEY);
+  if (stored === "light" || stored === "dark") return stored;
+  return window.matchMedia?.("(prefers-color-scheme: light)").matches ? "light" : "dark";
+}
 
 export default function App() {
   const [tab, setTab] = useState<Tab>("connect");
@@ -28,6 +37,18 @@ export default function App() {
   const [shortcuts, setShortcuts] = useState(
     () => localStorage.getItem(SHORTCUTS_KEY) !== "off",
   );
+  // Follows the OS preference until the user explicitly picks a theme.
+  const [theme, setTheme] = useState<Theme>(initialTheme);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  };
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -115,6 +136,10 @@ export default function App() {
             title="Number keys 1-6 switch tabs. Turn off if they conflict with your assistive technology."
           >
             Shortcuts: {shortcuts ? "on" : "off"}
+          </button>
+          <button className="btn btn-small" onClick={toggleTheme}>
+            <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>{" "}
+            {theme === "dark" ? "Light mode" : "Dark mode"}
           </button>
         </div>
       </header>

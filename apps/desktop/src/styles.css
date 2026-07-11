@@ -1,11 +1,16 @@
 /* ============================================================
    MotoDiag design system
-   Dark, workshop-grade UI. Data-viz colors validated against
-   the tile surface (see docs in repo; sparkline hue #3987e5 and
-   status text colors all clear 3:1 on --bg-raised).
+   Workshop-grade UI, themeable: dark is the default (:root),
+   light is a full token override ([data-theme="light"]) — every
+   ink/surface pair in BOTH themes is computed against WCAG 2.2 AA
+   (4.5:1 text, 3:1 UI/graphics), including alpha-composited status
+   tints. Sparkline hues are validated per-surface: #3987e5 on the
+   dark tile, #2f74d4 on the light one — a theme is its own palette,
+   not a flip. See docs/ACCESSIBILITY.md.
    ============================================================ */
 
 :root {
+  color-scheme: dark;
   /* Surfaces */
   --bg: #14161a;
   --bg-panel: #1d2026;
@@ -38,8 +43,16 @@
   --ok-on-tint: #46ca66;
   --danger-on-tint: #f98a87;
 
+  /* Control fills (hover/tinted button surfaces) */
+  --bg-hover: #2c313a;
+  --danger-bg: #52201d;
+  --danger-bg-hover: #63251f;
+  --warn-bg: #574a1f;
+  --warn-bg-hover: #665720;
+
   /* Data-viz (validated, single-series) */
   --viz-series: #3987e5;
+  --viz-series-deep: #1c5cab;
   --viz-band: rgba(57, 135, 229, 0.10);
   --viz-grid: #31363f;
 
@@ -50,6 +63,50 @@
   --dur: 150ms;
 
   font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+
+/* ---------- Light theme ----------
+   Not a flip: every token re-chosen and re-computed against the light
+   surfaces. Weakest pairs — muted ink 6.0:1 on raised; UI border 4.2:1;
+   status text 4.8–6.1:1; badge text over its status tint 5.1–5.9:1;
+   sparkline hue #2f74d4 4.3:1 (validated, lightness band + chroma). */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f2f3f5;
+  --bg-panel: #ffffff;
+  --bg-raised: #f7f8fa;
+  --bg-inset: #eceef1;
+  --border: #d5d9e0;
+  --border-strong: #b8bec8;
+
+  --text: #1a1e24;
+  --text-muted: #57606c;
+  --text-faint: #5d6673;
+
+  --accent: #e0342b;
+  --accent-solid: #d92f27;
+  --accent-hover: #b7241d;   /* darken on hover — lightening loses white-text contrast */
+  --border-ui: #6e7887;
+
+  --ok: #187f34;
+  --warn: #7a5900;
+  --danger: #b52a20;
+  --ok-on-tint: #14672c;
+  --danger-on-tint: #a91e18;
+
+  --bg-hover: #eceef1;
+  --danger-bg: #fbe9e8;
+  --danger-bg-hover: #f6d8d6;
+  --warn-bg: #fdf3d7;
+  --warn-bg-hover: #f9e9bb;
+
+  --viz-series: #2f74d4;
+  --viz-series-deep: #1c5cab;
+  --viz-band: rgba(47, 116, 212, 0.12);
+  --viz-grid: #dfe3e9;
+
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 4px 16px rgba(16, 24, 40, 0.07);
 }
 
 * { box-sizing: border-box; }
@@ -111,6 +168,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap; /* reflow as whole blocks at narrow widths (1.4.10) */
+  row-gap: 6px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-panel);
@@ -134,9 +193,16 @@ body {
   background: var(--accent);
 }
 
-.brand-sub { margin-left: 10px; color: var(--text-muted); font-size: 13px; }
+.brand-sub { margin-left: 10px; color: var(--text-muted); font-size: 13px; white-space: nowrap; }
 
-.conn-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.conn-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
 .conn-text { font-size: 14px; }
 
 .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
@@ -240,16 +306,16 @@ select:hover, input:hover { border-color: var(--text-muted); }
   cursor: pointer;
   transition: border-color var(--dur), background var(--dur), transform var(--dur);
 }
-.btn:hover:not(:disabled) { border-color: var(--text-muted); background: #2c313a; }
+.btn:hover:not(:disabled) { border-color: var(--text-muted); background: var(--bg-hover); }
 .btn:active:not(:disabled) { transform: translateY(1px); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn-small { padding: 5px 11px; font-size: 13px; }
 .btn-primary { background: var(--accent-solid); border-color: var(--accent-solid); color: #ffffff; font-weight: 600; }
 .btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
-.btn-danger { background: #52201d; border-color: var(--danger); }
-.btn-danger:hover:not(:disabled) { background: #63251f; }
-.btn-warn { background: #574a1f; border-color: var(--warn); }
-.btn-warn:hover:not(:disabled) { background: #665720; }
+.btn-danger { background: var(--danger-bg); border-color: var(--danger); }
+.btn-danger:hover:not(:disabled) { background: var(--danger-bg-hover); }
+.btn-warn { background: var(--warn-bg); border-color: var(--warn); }
+.btn-warn:hover:not(:disabled) { background: var(--warn-bg-hover); }
 .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
 
 /* ---------- Badges & message boxes ---------- */
@@ -471,7 +537,7 @@ select:hover, input:hover { border-color: var(--text-muted); }
   overflow: hidden;
 }
 .sync-bar-fill {
-  background: linear-gradient(180deg, var(--viz-series), #1c5cab);
+  background: linear-gradient(180deg, var(--viz-series), var(--viz-series-deep));
   transition: height 0.25s ease;
 }
 .sync-kpa { font-size: 16px; font-weight: 600; }

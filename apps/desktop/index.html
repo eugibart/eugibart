@@ -4,6 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MotoDiag</title>
+    <script>
+      // Set the theme before first paint so the app never flashes the wrong
+      // one. Must mirror initialTheme() in App.tsx (same key, same fallback).
+      (function () {
+        var t;
+        try { t = localStorage.getItem("motodiag-theme"); } catch (e) {}
+        if (t !== "light" && t !== "dark") {
+          t = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
+            ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", t);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -25,9 +25,12 @@ touches one of these behaviours, re-check the criterion it implements.
   words ("balanced"/"close, keep going"/"unbalanced"). Verified/unverified is a
   text badge, not a color.
 - **1.4.3 Contrast (minimum)** — All text/background pairs are computed, not
-  eyeballed. Weakest pairs: faint text `#8a90a0` on raised surface = 4.51:1;
-  primary button white on `#d92f27` = 4.79:1; muted and body text well above
-  7:1. Placeholder text uses the muted color, not faint.
+  eyeballed, **in both themes**. Dark weakest pairs: faint text `#8a90a0` on
+  raised surface = 4.51:1; primary button white on `#d92f27` = 4.79:1. Light
+  weakest pairs: muted ink `#57606c` on raised = 6.0:1; status text
+  4.8–6.1:1; badge text over its status tint 5.1–5.9:1. The light theme is a
+  full token override, not a programmatic inversion — every value re-chosen
+  and re-verified. Placeholder text uses the muted color, not faint.
 - **1.4.4 Resize text / 1.4.10 Reflow** — Layout is flex/grid with `flex-wrap`
   on the tab bar, connection status, form rows, and sync bars; wide content
   scrolls in its own container. No information is lost at 400% zoom /
@@ -98,7 +101,8 @@ touches one of these behaviours, re-check the criterion it implements.
   `wcag21aa`, `wcag22aa`) run via Playwright against nine app states —
   connect, connect+troubleshooter, dashboard (live and paused), fault codes,
   service (read-only and confirm), sync with gauge connected, and logging —
-  using the same mock-IPC harness as the UI screenshots. **0 violations.**
+  **in each theme** (18 audited states total), using the same mock-IPC
+  harness as the UI screenshots. **0 violations.**
   This pass caught a real defect the hand-computed pass missed: badge text
   sat on a semi-transparent status *tint*, which lightens the effective
   background, dropping ok/danger badge text below 4.5:1 — fixed with the
@@ -119,10 +123,28 @@ touches one of these behaviours, re-check the criterion it implements.
 - High-contrast / forced-colors mode is not yet explicitly styled
   (`forced-colors` media query) — tracked as future work.
 
+## Theming
+
+The app ships dark and light themes: a toggle in the top bar, persisted in
+`localStorage` (`motodiag-theme`), defaulting to the OS `prefers-color-scheme`
+until the user picks one. Implementation notes that matter for accessibility:
+
+- The theme is applied as `data-theme` on `<html>` **before first paint**
+  (inline script in `index.html`, mirrored by `initialTheme()` in `App.tsx`)
+  so there is no wrong-theme flash.
+- `color-scheme` is set per theme so native controls (select popups,
+  scrollbars) match.
+- Each theme is a complete token set with its own computed contrast — the
+  data-viz hue differs per theme (`#3987e5` dark / `#2f74d4` light) because
+  each was validated against its own surface (lightness band, chroma floor,
+  ≥3:1 vs surface).
+
 ## Rules for contributors
 
-1. **Compute contrast, never eyeball it.** New color pairs must show the ratio
-   in the PR description (4.5:1 text, 3:1 UI/graphics).
+1. **Compute contrast, never eyeball it — in both themes.** New color pairs
+   must show the ratio in the PR description (4.5:1 text, 3:1 UI/graphics).
+   A new color means a new token with a value per theme; never hard-code a
+   color that only works on one surface.
 2. **No hover-only or color-only information.** Anything a tooltip or hue
    conveys must also exist as text reachable by keyboard.
 3. **New polling loops get a pause control** wired to actually stop the timer.
