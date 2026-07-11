@@ -35,6 +35,7 @@ const def: DefinitionInfo = {
     { key: "iat", name: "Intake air temperature", unit: "°C", verified: false, spec: null },
   ],
   routines: [],
+  charging: null,
 };
 
 const guidance: ModGuidanceInfo = {

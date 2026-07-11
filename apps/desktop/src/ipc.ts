@@ -29,6 +29,18 @@ export interface RoutineInfo {
   preconditions: string[];
 }
 
+/** Community-sourced thresholds for the guided charging-system test. */
+export interface ChargingTestInfo {
+  rest_min_v: number;
+  charging_min_v: number;
+  charging_max_v: number;
+  check_rpm_min: number;
+  check_rpm_max: number;
+  stator_notes: string;
+  source: string;
+  source_url: string;
+}
+
 export interface DefinitionInfo {
   id: string;
   name: string;
@@ -39,6 +51,7 @@ export interface DefinitionInfo {
   notes: string | null;
   channels: ChannelInfo[];
   routines: RoutineInfo[];
+  charging: ChargingTestInfo | null;
 }
 
 /** One bike in the structured catalog (brand → model → year → definition). */
@@ -179,6 +192,44 @@ export interface BikeReportInfo {
   specs: BikeReportSpecInfo[];
 }
 
+/** This session's wire-trace recording (path + how many events so far). */
+export interface WireTraceInfo {
+  path: string;
+  event_count: number;
+}
+
+export interface TraceReportRow {
+  kind: string;
+  request_hex: string;
+  ok: boolean;
+  detail: string;
+}
+
+export interface TraceChannelStat {
+  key: string;
+  name: string;
+  unit: string;
+  samples: number;
+  last_value: number;
+}
+
+/** What decoded when a shared trace was analyzed against a definition. */
+export interface TraceReport {
+  definition_id: string;
+  event_count: number;
+  exchange_count: number;
+  init_seen: boolean;
+  identity: string | null;
+  channels: TraceChannelStat[];
+  dtc_reads: number;
+  dtc_last_count: number | null;
+  tester_present: number;
+  negative_responses: number;
+  unparsed_rx_bytes: number;
+  rows: TraceReportRow[];
+  rows_truncated: boolean;
+}
+
 export const SIMULATOR_PORT = "simulator";
 
 export const api = {
@@ -202,6 +253,9 @@ export const api = {
     invoke<TroubleshootStep[]>("troubleshoot_connection", { definitionId, port }),
   exportHealthReport: (bike: BikeReportInfo | null) =>
     invoke<string>("export_health_report", { bike }),
+  exportWireTrace: () => invoke<WireTraceInfo>("export_wire_trace"),
+  importWireTrace: (path: string, definitionId: string | null) =>
+    invoke<TraceReport>("import_wire_trace", { path, definitionId }),
   connectVacuum: (port: string) => invoke<VacuumInfo>("connect_vacuum", { port }),
   vacuumStatus: () => invoke<VacuumInfo | null>("vacuum_status"),
   pollVacuum: () => invoke<VacuumStatus>("poll_vacuum"),

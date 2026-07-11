@@ -390,6 +390,33 @@ textarea { resize: vertical; }
 
 .gauge-citation { margin-top: 4px; }
 
+/* ---------- Snapshots & compare ---------- */
+
+.snapshot-label-input { min-width: 150px; padding: 5px 10px; font-size: 13px; }
+.snapshot-list { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.snapshot-list li { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.compare-scroll { overflow-x: auto; }
+
+/* ---------- Guided charging test & trace report ---------- */
+
+.charging-panel {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-top: 10px;
+  max-width: 640px;
+}
+
+.trace-report {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  margin-top: 12px;
+}
+.trace-report h3 { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
 .btn {
   background: var(--bg-raised);
   color: var(--text);

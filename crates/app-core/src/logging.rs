@@ -65,6 +65,16 @@ impl WireTraceRecorder {
             out: BufWriter::new(File::create(path)?),
         })
     }
+
+    /// Create a trace file whose first line is a metadata header (see
+    /// `trace_report::TraceMetadata`) followed by one event per line —
+    /// the shareable "motodiag-trace/1" format.
+    pub fn create_with_header(path: &Path, header: &str) -> Result<Self> {
+        let mut out = BufWriter::new(File::create(path)?);
+        writeln!(out, "{header}")?;
+        out.flush()?;
+        Ok(Self { out })
+    }
 }
 
 impl TraceSink for WireTraceRecorder {

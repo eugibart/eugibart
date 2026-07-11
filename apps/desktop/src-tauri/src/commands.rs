@@ -54,6 +54,18 @@ pub struct RoutineInfo {
 }
 
 #[derive(serde::Serialize)]
+pub struct ChargingTestInfo {
+    pub rest_min_v: f64,
+    pub charging_min_v: f64,
+    pub charging_max_v: f64,
+    pub check_rpm_min: f64,
+    pub check_rpm_max: f64,
+    pub stator_notes: String,
+    pub source: String,
+    pub source_url: String,
+}
+
+#[derive(serde::Serialize)]
 pub struct DefinitionInfo {
     pub id: String,
     pub name: String,
@@ -64,6 +76,7 @@ pub struct DefinitionInfo {
     pub notes: Option<String>,
     pub channels: Vec<ChannelInfo>,
     pub routines: Vec<RoutineInfo>,
+    pub charging: Option<ChargingTestInfo>,
 }
 
 #[derive(serde::Serialize)]
@@ -126,6 +139,16 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                     preconditions: describe_preconditions(&r.preconditions),
                 })
                 .collect(),
+            charging: def.charging.as_ref().map(|c| ChargingTestInfo {
+                rest_min_v: c.rest_min_v,
+                charging_min_v: c.charging_min_v,
+                charging_max_v: c.charging_max_v,
+                check_rpm_min: c.check_rpm_min,
+                check_rpm_max: c.check_rpm_max,
+                stator_notes: c.stator_notes.clone(),
+                source: c.source.clone(),
+                source_url: c.source_url.clone(),
+            }),
         })
         .collect()
 }
@@ -219,6 +242,42 @@ pub async fn connect(
         ConnectOptions::default()
     };
 
+    // Record every session as a shareable wire trace (community-verification
+    // evidence). Best-effort: a trace-file failure never blocks connecting.
+    let now_ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    let mut trace_path = None;
+    let transport: Box<dyn KLineTransport> = {
+        use motodiag_app_core::logging::WireTraceRecorder;
+        use motodiag_app_core::trace_report::TraceMetadata;
+        use motodiag_transport::trace::TracingTransport;
+
+        let dir = std::env::temp_dir().join("motodiag-traces");
+        let recorder = std::fs::create_dir_all(&dir).ok().and_then(|_| {
+            let path = dir.join(format!(
+                "motodiag-trace-{}-{}.jsonl",
+                definition_id,
+                now_ms / 1000
+            ));
+            let header = serde_json::to_string(&TraceMetadata {
+                format: "motodiag-trace/1".into(),
+                definition_id: definition_id.clone(),
+                recorded_at_ms: now_ms,
+                simulated: port == SIMULATOR_PORT,
+            })
+            .ok()?;
+            let recorder = WireTraceRecorder::create_with_header(&path, &header).ok()?;
+            trace_path = Some(path);
+            Some(recorder)
+        });
+        match recorder {
+            Some(recorder) => Box::new(TracingTransport::new(transport, Box::new(recorder))),
+            None => transport,
+        }
+    };
+
     let session = DiagSession::connect(transport, def, options).map_err(|e| e.to_string())?;
 
     let info = ConnectionInfo {
@@ -234,8 +293,53 @@ pub async fn connect(
         session,
         sim_thread,
         csv_log: None,
+        trace_path,
     });
     Ok(info)
+}
+
+#[derive(serde::Serialize)]
+pub struct WireTraceInfo {
+    pub path: String,
+    pub event_count: usize,
+}
+
+/// Where this session's wire trace lives (recorded continuously since
+/// connect) — the file an owner shares for community verification.
+#[tauri::command]
+pub async fn export_wire_trace(state: State<'_, AppState>) -> Result<WireTraceInfo, String> {
+    let guard = state.connection.lock().unwrap();
+    let conn = guard.as_ref().ok_or("not connected")?;
+    let path = conn
+        .trace_path
+        .as_ref()
+        .ok_or("this session has no wire trace (recording failed at connect)")?;
+    let (_, events) = motodiag_app_core::trace_report::load_trace_file(path)
+        .map_err(|e| format!("trace unreadable: {e}"))?;
+    Ok(WireTraceInfo {
+        path: path.display().to_string(),
+        event_count: events.len(),
+    })
+}
+
+/// Analyze a shared wire-trace file against an ECU definition and report
+/// what decoded — the receiving end of the community verification loop.
+/// `definition_id` overrides the trace's own metadata when provided.
+#[tauri::command]
+pub async fn import_wire_trace(
+    path: String,
+    definition_id: Option<String>,
+) -> Result<motodiag_app_core::trace_report::TraceReport, String> {
+    let (metadata, events) =
+        motodiag_app_core::trace_report::load_trace_file(std::path::Path::new(&path))
+            .map_err(|e| format!("could not read trace: {e}"))?;
+    let def_id = definition_id
+        .or(metadata.map(|m| m.definition_id))
+        .ok_or("trace has no definition metadata — pick a definition to analyze against")?;
+    let def = load_registry()
+        .get(&def_id)
+        .ok_or_else(|| format!("unknown ECU definition '{def_id}'"))?;
+    Ok(motodiag_app_core::trace_report::analyze(def, &events))
 }
 
 #[tauri::command]

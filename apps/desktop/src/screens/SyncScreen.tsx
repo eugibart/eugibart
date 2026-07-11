@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, SIMULATOR_PORT, VacuumStatus } from "../ipc";
+import ComparePanel from "../ComparePanel";
+import { makeSnapshot, useSnapshots } from "../snapshots";
 
 const POLL_INTERVAL_MS = 300;
 // Indicative thresholds (kPa spread across cylinders) — workshop manuals
@@ -31,6 +33,26 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
   // WCAG 2.2.2: auto-updating content needs a pause control.
   const [paused, setPaused] = useState(false);
   const polling = useRef(false);
+  const { addSnapshot } = useSnapshots();
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
+
+  const captureSnapshot = async () => {
+    const label = snapshotLabel.trim() || "snapshot";
+    // Grab a fresh full reading set when the ECU is up, so the snapshot
+    // carries rpm/CO-relevant channels alongside the vacuum picture.
+    let readings: Awaited<ReturnType<typeof api.pollLiveData>> = [];
+    if (ecuConnected) {
+      try {
+        readings = await api.pollLiveData();
+      } catch {
+        // Vacuum-only snapshot is still worth keeping.
+      }
+    }
+    addSnapshot(makeSnapshot(label, null, readings, status));
+    setSnapshotLabel("");
+    setSnapshotSaved(label);
+  };
 
   useEffect(() => {
     api.listSerialPorts().then(setPorts).catch(() => {});
@@ -150,10 +172,28 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
             >
               {paused ? "Resume updates" : "Pause updates"}
             </button>
+            <label className="visually-hidden" htmlFor="sync-snapshot-label">
+              Snapshot label
+            </label>
+            <input
+              id="sync-snapshot-label"
+              className="snapshot-label-input"
+              placeholder="e.g. after sync"
+              value={snapshotLabel}
+              onChange={(e) => setSnapshotLabel(e.target.value)}
+            />
+            <button className="btn btn-small" onClick={captureSnapshot} disabled={!status}>
+              Snapshot
+            </button>
             <button className="btn btn-small" onClick={disconnect}>
               Disconnect gauge
             </button>
           </div>
+          {snapshotSaved && (
+            <p className="muted small" role="status">
+              Snapshot "{snapshotSaved}" saved — compare below.
+            </p>
+          )}
 
           {status && (
             <>
@@ -192,6 +232,13 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
           )}
         </>
       )}
+
+      <h3 className="section-gap">Before / after compare</h3>
+      <p className="muted small">
+        Capture a snapshot before touching the screws and another after — the deltas below are
+        the evidence that the adjustment actually improved things.
+      </p>
+      <ComparePanel />
 
       <h3 className="section-gap">Procedure</h3>
       <ol className="pre-list">

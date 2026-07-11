@@ -150,6 +150,25 @@ scale = 1.0
 verified = false
 
 # ---------------------------------------------------------------------------
+# Guided charging-system test
+# ---------------------------------------------------------------------------
+# The Brutale/F4 charging system (stator + regulator/rectifier) is the
+# marque's most notorious weak point. Figures from mvagusta.net charging
+# threads: healthy is 14-15 V DC at the battery with the engine running,
+# regulator capping ~14.5 V, and it must be CHECKED AT ~2000 RPM, NOT IDLE.
+# Resting battery ~13.2 V healthy; ~12 V won't reliably start.
+
+[charging]
+rest_min_v = 12.4
+charging_min_v = 14.0
+charging_max_v = 15.0
+check_rpm_min = 1800.0
+check_rpm_max = 2600.0
+stator_notes = "Stator sanity check: ~1 Ω between each pair of the 3 phase wires; AC output 20-30 V at idle rising to 60-70 V with revs. If the stator's AC output is good but the battery never sees 14+ V DC, the regulator/rectifier is the culprit; if several reg/recs give the same bad result, it's the stator."
+source = "mvagusta.net"
+source_url = "https://www.mvagusta.net/threads/regulator-rectifier.231393/"
+
+# ---------------------------------------------------------------------------
 # Fault codes
 # ---------------------------------------------------------------------------
 

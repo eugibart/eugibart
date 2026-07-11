@@ -28,6 +28,8 @@ fn main() {
             commands::stop_csv_log,
             commands::troubleshoot_connection,
             commands::export_health_report,
+            commands::export_wire_trace,
+            commands::import_wire_trace,
             commands::connect_vacuum,
             commands::vacuum_status,
             commands::poll_vacuum,

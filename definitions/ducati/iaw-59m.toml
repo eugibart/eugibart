@@ -127,6 +127,21 @@ condition = "engine running at 3000-4000 rpm — should reach 13.8-14.2 V; volta
 source = "ducati.ms"
 source_url = "https://www.ducati.ms/threads/750075/"
 
+# Guided charging-system test — the 916-era family's notorious weak point
+# (pre-1998-design rectifiers failed en masse; yellow stator-wire connectors
+# melt). Community figures (ducati.ms): healthy rises with rpm to
+# ~13.8-14.2 V by 3000-4000 rpm; ~13.5 V is minimum adequate; the classic
+# failure signature is voltage that WON'T CLIMB with revs.
+[charging]
+rest_min_v = 12.4
+charging_min_v = 13.5
+charging_max_v = 14.4
+check_rpm_min = 3000.0
+check_rpm_max = 4200.0
+stator_notes = "If voltage won't climb with revs even though it reads OK at idle, suspect heat-damaged stator windings or the melted yellow stator-wire connectors — the community fix is to solder those joints and delete the connectors. A regulator bench-tested at ~2000 rpm should output ~25-30 V AC."
+source = "ducati.ms"
+source_url = "https://www.ducati.ms/threads/750075/"
+
 [dtc]
 read_request = [0x18, 0x02, 0xFF, 0x00]
 clear_request = [0x14, 0xFF, 0x00]

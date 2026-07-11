@@ -23,6 +23,10 @@ pub struct EcuDefinition {
     pub dtc: DtcConfig,
     #[serde(default)]
     pub routines: Vec<Routine>,
+    /// Parameters for the guided charging-system check (community-sourced;
+    /// absent when no citable figures exist for this ECU's bikes).
+    #[serde(default)]
+    pub charging: Option<ChargingTest>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,6 +187,36 @@ pub struct ChannelSpec {
     /// The specific page/thread backing the figure (https).
     #[serde(default)]
     pub source_url: Option<String>,
+}
+
+/// Parameters for the guided charging-system test: an interactive
+/// rest → idle → revved battery-voltage check driven by live data. The
+/// charging system (regulator/rectifier, stator, connectors) is the
+/// most notorious real-world failure on both marques, and community
+/// threads carry concrete, citable pass/fail figures — this block turns
+/// them into a walk-through. Requires both a `batt` and an `rpm` channel.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChargingTest {
+    /// Healthy resting battery voltage (key on, engine off) lower bound.
+    pub rest_min_v: f64,
+    /// Minimum acceptable voltage at the check RPM — below this, the
+    /// charging system is suspect.
+    pub charging_min_v: f64,
+    /// Maximum acceptable voltage — above this the regulator is
+    /// overcharging (which cooks batteries).
+    pub charging_max_v: f64,
+    /// RPM band the rider holds while the app captures the charging
+    /// reading (charging systems often need revs to produce full output).
+    pub check_rpm_min: f64,
+    pub check_rpm_max: f64,
+    /// What to physically check when the verdict points at the stator
+    /// vs the regulator/rectifier — the community's diagnostic split.
+    pub stator_notes: String,
+    /// Community citation (site name + https URL) — required: these are
+    /// pass/fail thresholds, they must be attributable.
+    pub source: String,
+    pub source_url: String,
 }
 
 impl ChannelSpec {
@@ -388,6 +422,33 @@ impl EcuDefinition {
                     ))
                 }
                 None => return Err(format!("'{what}' has an empty request")),
+            }
+        }
+
+        if let Some(charging) = &self.charging {
+            if !(charging.rest_min_v < charging.charging_min_v
+                && charging.charging_min_v < charging.charging_max_v)
+            {
+                return Err(
+                    "[charging] needs rest_min_v < charging_min_v < charging_max_v".to_string(),
+                );
+            }
+            if charging.check_rpm_min >= charging.check_rpm_max || charging.check_rpm_min <= 0.0 {
+                return Err("[charging] needs 0 < check_rpm_min < check_rpm_max".to_string());
+            }
+            for key in ["batt", "rpm"] {
+                if !self.channels.iter().any(|c| c.key == key) {
+                    return Err(format!(
+                        "[charging] requires a '{key}' channel — the guided test reads it live"
+                    ));
+                }
+            }
+            if charging.source.trim().is_empty() || !charging.source_url.starts_with("https://") {
+                return Err(
+                    "[charging] thresholds are community claims — they need a named source \
+                     and an https source_url"
+                        .to_string(),
+                );
             }
         }
         Ok(())

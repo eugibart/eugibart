@@ -11,6 +11,7 @@ pub mod logging;
 pub mod report;
 pub mod safety;
 pub mod session;
+pub mod trace_report;
 pub mod troubleshoot;
 pub mod vacuum;
 

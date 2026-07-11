@@ -16,6 +16,10 @@ pub struct Connection {
     /// Keeps the in-process simulator thread alive for "Simulator" connections.
     pub sim_thread: Option<std::thread::JoinHandle<motodiag_ecu_sim::Simulator>>,
     pub csv_log: Option<(String, CsvLogger)>,
+    /// Where this session's wire trace is being recorded (every session is
+    /// recorded — the file is the shareable community-verification artifact).
+    /// `None` only if creating the trace file failed at connect time.
+    pub trace_path: Option<std::path::PathBuf>,
 }
 
 /// A connected vacuum gauge (Sync Assistant). Deliberately independent of

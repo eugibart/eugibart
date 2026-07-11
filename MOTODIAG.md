@@ -43,7 +43,18 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
 - **One-click bike health report** — self-contained HTML snapshot (identity,
   DTCs with guidance, live data) for pre-purchase inspections or sending to
   a mechanic
-- Log live data to CSV; capture every session as a replayable wire trace
+- **Guided charging-system test** — the most notorious real fault on both
+  marques, turned into a three-step walk-through (resting → idle → revved)
+  with live auto-capture and a cited verdict that splits regulator/rectifier
+  from stator/connector failures (the community's diagnostic logic, sourced)
+- **Session compare** — snapshot live data (and vacuum state) before and
+  after sync or CO work; a side-by-side delta table replaces "it feels
+  better" with evidence
+- **Wire-trace share & analyze** — every session is recorded as a replayable
+  wire trace with metadata; import anyone's trace and get a decode report
+  (identity, channels with values, DTC reads, negative responses) against a
+  definition — the community loop that eventually flips `verified = true`
+- Log live data to CSV
 - **Sync Assistant (vacuometro)** — reads an open-hardware digital vacuum
   gauge (~€50 DIY build, firmware included) on a second USB port and shows
   per-cylinder vacuum, spread, and live ECU RPM on one screen for

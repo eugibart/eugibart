@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ConnectionInfo, DefinitionInfo, ModGuidanceInfo, Reading } from "../ipc";
 import { BikeProfile, useGarage } from "../garage";
+import { makeSnapshot, useSnapshots } from "../snapshots";
 import { resolveSpecs, inRange, ResolvedSpec } from "../specResolution";
+import ChargingTestPanel from "../ChargingTestPanel";
 import Sparkline from "../Sparkline";
 import SourceLink from "../SourceLink";
 import SpecOverridesEditor from "../SpecOverridesEditor";
@@ -25,6 +27,9 @@ export default function DashboardScreen({
   const history = useRef<Record<string, number[]>>({});
   const polling = useRef(false);
   const { updateProfile } = useGarage();
+  const { addSnapshot } = useSnapshots();
+  const [snapshotLabel, setSnapshotLabel] = useState("");
+  const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([api.listDefinitions(), api.listModGuidance()])
@@ -75,14 +80,43 @@ export default function DashboardScreen({
     <div className="panel panel-wide">
       <div className="panel-head">
         <h2>Live data</h2>
-        <button
-          className="btn btn-small"
-          onClick={() => setPaused((p) => !p)}
-          aria-pressed={paused}
-        >
-          {paused ? "Resume updates" : "Pause updates"}
-        </button>
+        <div className="btn-row" style={{ marginTop: 0 }}>
+          <label className="visually-hidden" htmlFor="snapshot-label">
+            Snapshot label
+          </label>
+          <input
+            id="snapshot-label"
+            className="snapshot-label-input"
+            placeholder="e.g. before sync"
+            value={snapshotLabel}
+            onChange={(e) => setSnapshotLabel(e.target.value)}
+          />
+          <button
+            className="btn btn-small"
+            disabled={readings.length === 0}
+            onClick={() => {
+              const label = snapshotLabel.trim() || "snapshot";
+              addSnapshot(makeSnapshot(label, activeProfile?.name ?? null, readings, null));
+              setSnapshotLabel("");
+              setSnapshotSaved(label);
+            }}
+          >
+            Snapshot
+          </button>
+          <button
+            className="btn btn-small"
+            onClick={() => setPaused((p) => !p)}
+            aria-pressed={paused}
+          >
+            {paused ? "Resume updates" : "Pause updates"}
+          </button>
+        </div>
       </div>
+      {snapshotSaved && (
+        <p className="muted small" role="status">
+          Snapshot "{snapshotSaved}" saved — compare snapshots on the Sync tab.
+        </p>
+      )}
       <p className="muted small">
         Polling every {POLL_INTERVAL_MS} ms — sparklines show the last ~
         {Math.round((HISTORY_SAMPLES * POLL_INTERVAL_MS) / 1000)} s. Hover or focus a trend
@@ -144,6 +178,10 @@ export default function DashboardScreen({
           <span className="glyph" aria-hidden="true">⏱</span>
           Waiting for the first live-data frame…
         </div>
+      )}
+
+      {definition?.charging && (
+        <ChargingTestPanel charging={definition.charging} readings={readings} />
       )}
 
       {activeProfile && definition && (
