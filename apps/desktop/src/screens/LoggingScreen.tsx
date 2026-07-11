@@ -48,11 +48,15 @@ export default function LoggingScreen() {
   return (
     <div className="panel">
       <h2>Data logging</h2>
-      {error && <div className="error-box">{error}</div>}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
 
       {logPath ? (
         <>
-          <p className="ok-box">
+          <p className="ok-box" role="status">
             Recording live data to <span className="mono">{logPath}</span>
           </p>
           <p className="muted small">
@@ -82,7 +86,7 @@ export default function LoggingScreen() {
         Handy for pre-purchase inspections.
       </p>
       {reportPath && (
-        <p className="ok-box">
+        <p className="ok-box" role="status">
           Report saved to <span className="mono">{reportPath}</span>
         </p>
       )}

@@ -28,6 +28,8 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
   const [status, setStatus] = useState<VacuumStatus | null>(null);
   const [rpm, setRpm] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // WCAG 2.2.2: auto-updating content needs a pause control.
+  const [paused, setPaused] = useState(false);
   const polling = useRef(false);
 
   useEffect(() => {
@@ -39,7 +41,7 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
   }, []);
 
   useEffect(() => {
-    if (!gaugePort) return;
+    if (!gaugePort || paused) return;
     let cancelled = false;
     const tick = async () => {
       if (polling.current) return;
@@ -67,7 +69,7 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
       cancelled = true;
       clearInterval(id);
     };
-  }, [gaugePort, ecuConnected]);
+  }, [gaugePort, ecuConnected, paused]);
 
   const connect = async () => {
     setError(null);
@@ -103,12 +105,20 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
         docs/VACUOMETRO.md).
       </p>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
 
       {!gaugePort ? (
         <div className="form-row">
-          <label>Gauge port</label>
-          <select value={selectedPort} onChange={(e) => setSelectedPort(e.target.value)}>
+          <label htmlFor="gauge-port">Gauge port</label>
+          <select
+            id="gauge-port"
+            value={selectedPort}
+            onChange={(e) => setSelectedPort(e.target.value)}
+          >
             {ports.map((p) => (
               <option key={p} value={p}>
                 {p === SIMULATOR_PORT ? "Simulated vacuum gauge (no hardware)" : p}
@@ -133,6 +143,13 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
                 (connect the ECU too to see live RPM here)
               </span>
             )}
+            <button
+              className="btn btn-small"
+              onClick={() => setPaused((p) => !p)}
+              aria-pressed={paused}
+            >
+              {paused ? "Resume updates" : "Pause updates"}
+            </button>
             <button className="btn btn-small" onClick={disconnect}>
               Disconnect gauge
             </button>

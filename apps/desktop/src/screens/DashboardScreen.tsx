@@ -9,6 +9,8 @@ export default function DashboardScreen({ connection }: { connection: Connection
   const [readings, setReadings] = useState<Reading[]>([]);
   const [specs, setSpecs] = useState<Record<string, ChannelSpecInfo>>({});
   const [error, setError] = useState<string | null>(null);
+  // WCAG 2.2.2: auto-updating content needs a pause control.
+  const [paused, setPaused] = useState(false);
   const history = useRef<Record<string, number[]>>({});
   const polling = useRef(false);
 
@@ -27,6 +29,7 @@ export default function DashboardScreen({ connection }: { connection: Connection
   }, [connection.definition_id]);
 
   useEffect(() => {
+    if (paused) return;
     let cancelled = false;
     const tick = async () => {
       if (polling.current) return; // don't overlap slow polls
@@ -54,17 +57,35 @@ export default function DashboardScreen({ connection }: { connection: Connection
       cancelled = true;
       clearInterval(id);
     };
-  }, []);
+  }, [paused]);
 
   return (
     <div className="panel panel-wide">
-      <h2>Live data</h2>
+      <div className="panel-head">
+        <h2>Live data</h2>
+        <button
+          className="btn btn-small"
+          onClick={() => setPaused((p) => !p)}
+          aria-pressed={paused}
+        >
+          {paused ? "Resume updates" : "Pause updates"}
+        </button>
+      </div>
       <p className="muted small">
         Polling every {POLL_INTERVAL_MS} ms — sparklines show the last ~
-        {Math.round((HISTORY_SAMPLES * POLL_INTERVAL_MS) / 1000)} s. Hover a trend for exact
-        samples.
+        {Math.round((HISTORY_SAMPLES * POLL_INTERVAL_MS) / 1000)} s. Hover or focus a trend
+        and use the arrow keys for exact samples.
       </p>
-      {error && <div className="error-box">{error}</div>}
+      {paused && (
+        <p className="muted small" role="status">
+          Updates paused — values show the last reading before pausing.
+        </p>
+      )}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="gauges">
         {readings.map((r) => {

@@ -74,8 +74,16 @@ export default function ServiceScreen({
         </div>
       )}
 
-      {error && <div className="error-box">{error}</div>}
-      {result && <div className="ok-box">{result}</div>}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
+      {result && (
+        <div className="ok-box" role="status">
+          {result}
+        </div>
+      )}
 
       <div className="routine-list">
         {routines.map((r) => (
@@ -123,12 +131,16 @@ export default function ServiceScreen({
       </div>
 
       {confirming && (
-        <div className="confirm-box">
-          <p>
+        <div className="confirm-box" role="group" aria-labelledby="confirm-run-label">
+          <p id="confirm-run-label">
             Run <strong>{confirming.name}</strong>? Preconditions are re-checked against live
             data before anything is sent. Type <code>RUN</code> to confirm.
           </p>
+          <label className="visually-hidden" htmlFor="confirm-run-input">
+            Type RUN to confirm
+          </label>
           <input
+            id="confirm-run-input"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder="Type RUN"

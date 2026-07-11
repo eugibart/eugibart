@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * Single-series sparkline for a stat tile.
@@ -8,6 +8,11 @@ import { useMemo, useState } from "react";
  * faint spec band showing the normal range when one exists, recessive
  * hairline bounds, and a hover layer (nearest-sample tooltip + marker dot).
  * The value text in the tile wears ink, not the series color.
+ *
+ * Accessibility: the tile is focusable; Left/Right/Home/End step through
+ * samples (WCAG 2.1.1 — everything hover gives, keys give too), the inspected
+ * value is echoed to a polite live region, and Escape dismisses the tooltip
+ * whether it was opened by pointer or keyboard (WCAG 1.4.13).
  */
 export default function Sparkline({
   values,
@@ -48,6 +53,18 @@ export default function Sparkline({
     return { x, y, path };
   }, [values, specMin, specMax]);
 
+  // WCAG 1.4.13: the hover tooltip must be dismissable without moving the
+  // pointer. Listen globally so Escape works for pointer-opened tooltips too
+  // (the tile isn't focused while hovering).
+  useEffect(() => {
+    if (hover === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setHover(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hover]);
+
   if (!geom) return <div className="spark" style={{ height: 44 }} />;
 
   const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
@@ -57,10 +74,32 @@ export default function Sparkline({
     setHover(Math.max(0, Math.min(values.length - 1, i)));
   };
 
+  const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const last = values.length - 1;
+    let next: number | null | undefined;
+    if (e.key === "ArrowLeft") next = Math.max(0, (hover ?? values.length) - 1);
+    else if (e.key === "ArrowRight") next = Math.min(last, (hover ?? -1) + 1);
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = last;
+    else return;
+    e.preventDefault();
+    setHover(next);
+  };
+
   const fmt = (v: number) => (Math.abs(v) >= 100 ? v.toFixed(0) : Math.abs(v) >= 10 ? v.toFixed(1) : v.toFixed(2));
 
   return (
-    <div className="spark">
+    <div
+      className="spark"
+      tabIndex={0}
+      role="img"
+      aria-label={`Recent trend, ${values.length} samples, latest ${fmt(values[values.length - 1])} ${unit}. Press Left or Right arrow to inspect samples.`}
+      onKeyDown={onKeyDown}
+      onBlur={() => setHover(null)}
+    >
+      <span className="visually-hidden" aria-live="polite">
+        {hover !== null ? `Sample ${hover + 1} of ${values.length}: ${fmt(values[hover])} ${unit}` : ""}
+      </span>
       {hover !== null && (
         <div className="spark-tip" style={{ left: `${(geom.x(hover) / W) * 100}%` }}>
           {fmt(values[hover])} {unit}
@@ -69,8 +108,7 @@ export default function Sparkline({
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"
-        role="img"
-        aria-label={`Recent trend, ${values.length} samples`}
+        aria-hidden="true"
         onMouseMove={onMove}
         onMouseLeave={() => setHover(null)}
       >

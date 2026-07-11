@@ -66,8 +66,12 @@ export default function ConnectScreen({
       <h2>Connect to a bike</h2>
 
       <div className="form-row">
-        <label>ECU definition</label>
-        <select value={definitionId} onChange={(e) => setDefinitionId(e.target.value)}>
+        <label htmlFor="connect-definition">ECU definition</label>
+        <select
+          id="connect-definition"
+          value={definitionId}
+          onChange={(e) => setDefinitionId(e.target.value)}
+        >
           {definitions.map((d) => (
             <option key={d.id} value={d.id}>
               {d.manufacturer} — {d.name}
@@ -97,8 +101,8 @@ export default function ConnectScreen({
       )}
 
       <div className="form-row">
-        <label>Port</label>
-        <select value={port} onChange={(e) => setPort(e.target.value)}>
+        <label htmlFor="connect-port">Port</label>
+        <select id="connect-port" value={port} onChange={(e) => setPort(e.target.value)}>
           {ports.map((p) => (
             <option key={p} value={p}>
               {p === SIMULATOR_PORT ? "Built-in ECU simulator (no hardware)" : p}
@@ -106,11 +110,15 @@ export default function ConnectScreen({
           ))}
         </select>
         <button className="btn btn-small" onClick={() => refresh()}>
-          ↻ Refresh
+          <span aria-hidden="true">↻</span> Refresh
         </button>
       </div>
 
-      {error && <div className="error-box">{error}</div>}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
 
       <div className="btn-row">
         <button className="btn btn-primary" onClick={connect} disabled={busy || !definitionId}>
@@ -127,7 +135,7 @@ export default function ConnectScreen({
       </div>
 
       {steps && (
-        <div className="ts-panel">
+        <div className="ts-panel" role="status" aria-live="polite">
           <h3>Connection check</h3>
           {steps.map((s) => (
             <div className={`ts-step ts-${s.status}`} key={s.name}>

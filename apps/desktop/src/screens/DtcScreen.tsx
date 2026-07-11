@@ -50,9 +50,17 @@ export default function DtcScreen({ serviceMode }: { serviceMode: boolean }) {
   return (
     <div className="panel">
       <h2>Fault codes</h2>
-      {error && <div className="error-box">{error}</div>}
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
 
-      {dtcs && dtcs.length === 0 && <p className="ok-box">No stored fault codes.</p>}
+      {dtcs && dtcs.length === 0 && (
+        <p className="ok-box" role="status">
+          No stored fault codes.
+        </p>
+      )}
 
       {dtcs && dtcs.length > 0 && (
         <div className="dtc-list">
@@ -96,7 +104,7 @@ export default function DtcScreen({ serviceMode }: { serviceMode: boolean }) {
 
       <div className="btn-row">
         <button className="btn" onClick={read} disabled={busy}>
-          ↻ Re-read
+          <span aria-hidden="true">↻</span> Re-read
         </button>
         {dtcs && dtcs.length > 0 && !confirming && (
           <button

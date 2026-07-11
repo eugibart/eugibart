@@ -34,6 +34,9 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   [docs/VACUOMETRO.md](docs/VACUOMETRO.md)
 - Service functions (actuator tests, TPS reset, CO trim) behind hard safety
   interlocks — **ECU map read/write is deliberately out of scope**
+- **WCAG 2.2 AA accessible UI** — full keyboard operation, computed contrast,
+  pausable live feeds, screen-reader status messages
+  ([docs/ACCESSIBILITY.md](docs/ACCESSIBILITY.md))
 
 ## Try it now — no bike or cable needed
 
