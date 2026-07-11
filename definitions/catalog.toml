@@ -74,14 +74,57 @@ year_from = 1999
 year_to = 2002
 gap_note = "Pre-2003 F4 750s use the older Marelli IAW 1.6M ECU, which MotoDiag can't talk to yet. Connecting with another definition could produce misleading results — we won't pretend otherwise."
 
-# ---------------- Ducati — Marelli IAW 5AM ----------------
+# ---------------- Ducati — Marelli IAW 5AM (air-cooled 2V, ~2005-2010) ----------------
+# Model→ECU mappings sourced from the TuneBoy/DynoDom 5AM applications list
+# (https://www.tuneboy.com.au/ducati_marelli/ mirror
+# https://dynodom.com.au/pages/ducati-models-with-the-marelli-59f-59m-and-5am-ecu)
+# and the ducati.ms model/ECU thread (https://www.ducati.ms/threads/60175/).
+# The 2010+ small bikes moved to Siemens/Continental M3C — see the gap
+# entries below, and docs/PROTOCOL.md for the full coverage table.
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 620"
+year_from = 2005
+year_to = 2006
+definition_id = "ducati-iaw-5am"
+gap_note = "Only 2005-2006 Monster 620s are on the 5AM — the 2002-2004 bikes run the earlier 5.9M. If yours is pre-2005, pick Monster 620 (early) instead."
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 695"
+year_from = 2006
+year_to = 2008
+definition_id = "ducati-iaw-5am"
 
 [[bikes]]
 brand = "Ducati"
 model = "Monster 696"
 year_from = 2008
-year_to = 2014
+year_to = 2010
 definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 696 (2011+)"
+year_from = 2011
+year_to = 2014
+gap_note = "From 2011 the Monster 696 switched to a Siemens/Continental M3C ECU, which MotoDiag can't talk to yet. The 5AM definition applies only to 2008-2010 bikes."
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 796"
+year_from = 2010
+year_to = 2014
+gap_note = "The Monster 796 uses a Siemens/Continental M3C ECU (not Marelli) — MotoDiag can't talk to it yet."
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 1000"
+year_from = 2005
+year_to = 2006
+definition_id = "ducati-iaw-5am"
+gap_note = "2005-2006 bikes only — the 2003-2004 Monster 1000 DS runs the earlier 5.9M generation. Check your model year."
 
 [[bikes]]
 brand = "Ducati"
@@ -89,43 +132,87 @@ model = "Monster 1100"
 year_from = 2009
 year_to = 2010
 definition_id = "ducati-iaw-5am"
+gap_note = "The 1100 EVO (2011-2013) switched to a Siemens ECU — this mapping is for the 2009-2010 Monster 1100/1100S only."
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster S2R 800"
+year_from = 2005
+year_to = 2007
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster S2R 1000"
+year_from = 2006
+year_to = 2008
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster S4RS"
+year_from = 2006
+year_to = 2008
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster S4R"
+year_from = 2006
+year_to = 2008
+definition_id = "ducati-iaw-5am"
+gap_note = "Testastretta-era S4R (2006-2008) only. The earlier S4R (2003-2005, 996 engine) is reported on the 5.9M — verify your ECU label before connecting."
+
+[[bikes]]
+brand = "Ducati"
+model = "Multistrada 620"
+year_from = 2005
+year_to = 2006
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Multistrada 1100"
+variants = ["1100", "1100S"]
+year_from = 2007
+year_to = 2009
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Hypermotard 1100"
+variants = ["1100", "1100S"]
+year_from = 2007
+year_to = 2009
+definition_id = "ducati-iaw-5am"
+gap_note = "The 1100 EVO (2010-2012) switched to a Siemens ECU — this mapping is for the 2007-2009 Marelli bikes only."
 
 [[bikes]]
 brand = "Ducati"
 model = "Hypermotard 796"
 year_from = 2010
 year_to = 2012
+gap_note = "The Hypermotard 796 uses a Siemens/Continental M3C ECU (not Marelli) — MotoDiag can't talk to it yet. An earlier version of this catalog mis-mapped it to the 5AM; that was wrong."
+
+[[bikes]]
+brand = "Ducati"
+model = "SportClassic GT1000"
+year_from = 2006
+year_to = 2010
 definition_id = "ducati-iaw-5am"
 
 [[bikes]]
 brand = "Ducati"
-model = "Hypermotard 1100"
-year_from = 2007
-year_to = 2012
+model = "SportClassic Sport 1000"
+variants = ["Sport 1000", "Sport 1000S", "PaulSmart 1000"]
+year_from = 2006
+year_to = 2009
 definition_id = "ducati-iaw-5am"
 
-# ---------------- Ducati — Marelli IAW 59M ----------------
-
-[[bikes]]
-brand = "Ducati"
-model = "748"
-year_from = 1995
-year_to = 2003
-definition_id = "ducati-iaw-59m"
-
-[[bikes]]
-brand = "Ducati"
-model = "916"
-year_from = 1994
-year_to = 1998
-definition_id = "ducati-iaw-59m"
-
-[[bikes]]
-brand = "Ducati"
-model = "996"
-year_from = 1999
-year_to = 2001
-definition_id = "ducati-iaw-59m"
+# ---------------- Ducati — Marelli IAW 59M / 5.9M (liquid-cooled, ~2001-2006) ----------------
+# Same sources as above. CORRECTION from earlier versions: 748/916/996 do
+# NOT run the 59M — they are P8/1.6M/16M-generation (ducati.ms model/ECU
+# thread; bikeboy.org; parts listings) and appear below as documented gaps.
 
 [[bikes]]
 brand = "Ducati"
@@ -136,9 +223,35 @@ definition_id = "ducati-iaw-59m"
 
 [[bikes]]
 brand = "Ducati"
-model = "Monster 900 i.e."
-year_from = 2000
-year_to = 2002
+model = "996R"
+year_from = 2001
+year_to = 2001
+definition_id = "ducati-iaw-59m"
+gap_note = "The 996R (first Testastretta) is on the 5.9M — unlike the regular 996, which is a 1.6M-generation bike we can't talk to yet."
+
+[[bikes]]
+brand = "Ducati"
+model = "749"
+variants = ["749", "749 Dark", "749S"]
+year_from = 2003
+year_to = 2006
+definition_id = "ducati-iaw-59m"
+gap_note = "The 749R race variant may carry a different (15RC) unit — check the ECU label."
+
+[[bikes]]
+brand = "Ducati"
+model = "999"
+variants = ["999", "999S"]
+year_from = 2003
+year_to = 2006
+definition_id = "ducati-iaw-59m"
+gap_note = "The 999R race variant may carry a different (15RC) unit — check the ECU label."
+
+[[bikes]]
+brand = "Ducati"
+model = "ST4S"
+year_from = 2001
+year_to = 2005
 definition_id = "ducati-iaw-59m"
 
 [[bikes]]
@@ -147,3 +260,68 @@ model = "Monster S4"
 year_from = 2001
 year_to = 2003
 definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "SuperSport 800"
+year_from = 2003
+year_to = 2007
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "SuperSport 1000 DS"
+year_from = 2003
+year_to = 2006
+definition_id = "ducati-iaw-59m"
+
+# ---------------- Ducati — documented gaps (different ECU generations) ----------------
+
+[[bikes]]
+brand = "Ducati"
+model = "916"
+year_from = 1994
+year_to = 1998
+gap_note = "The 916 runs the earlier Weber-Marelli P8 (to ~1995) then 1.6M — a generation MotoDiag can't talk to yet. An earlier version of this catalog mis-mapped it to the 59M; that was wrong, and connecting with the 59M definition could produce misleading results."
+
+[[bikes]]
+brand = "Ducati"
+model = "748"
+year_from = 1995
+year_to = 2003
+gap_note = "The 748 runs the Weber-Marelli 1.6M/16M generation, not the 5.9M — MotoDiag can't talk to it yet. (The famous 150 mV TPS and EPROM-chip culture belongs to these bikes.)"
+
+[[bikes]]
+brand = "Ducati"
+model = "996"
+year_from = 1999
+year_to = 2001
+gap_note = "The 996 (Biposto/S) runs the Weber-Marelli 1.6M/16M generation — MotoDiag can't talk to it yet. Only the 996R (2001, Testastretta) is on the supported 5.9M."
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 900 i.e."
+year_from = 2000
+year_to = 2002
+gap_note = "Sources genuinely conflict on this bike's ECU (1.5M/15M vs 5.9M depending on year) — check the label on your ECU before connecting; we won't guess for you."
+
+[[bikes]]
+brand = "Ducati"
+model = "ST2"
+year_from = 1997
+year_to = 2003
+gap_note = "The ST2 runs the Weber-Marelli 1.6M — MotoDiag can't talk to it yet."
+
+[[bikes]]
+brand = "Ducati"
+model = "SuperSport 900 i.e."
+year_from = 1998
+year_to = 2002
+gap_note = "The injected 900SS/750SS run the Weber-Marelli 1.5M/15M — MotoDiag can't talk to them yet."
+
+[[bikes]]
+brand = "Ducati"
+model = "848 / 1098 / 1198"
+year_from = 2007
+year_to = 2011
+gap_note = "These are CAN-bus bikes (Marelli 5.9M-R era on CAN, not K-line) — a different transport MotoDiag doesn't support on Ducati yet."

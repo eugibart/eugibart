@@ -1,4 +1,4 @@
-# Ducati — Magneti Marelli IAW 5AM (e.g. Monster 696/1100, Hypermotard 796/1100)
+# Ducati — Magneti Marelli IAW 5AM (air-cooled 2-valve range, ~2005-2010)
 #
 # STATUS: UNVERIFIED SCAFFOLD, same standing as the Brutale 910's 5SM
 # definition (see that file's header). K-line/KWP2000, same Marelli IAW
@@ -6,18 +6,47 @@
 # the transport, protocol-kwp2000, and app-core layers work unmodified
 # against this file; only the data below is new. Nothing here has been
 # confirmed against a real Ducati yet.
+#
+# Model list sourced from the TuneBoy/DynoDom 5AM applications list
+# (https://www.tuneboy.com.au/ducati_marelli/) and ducati.ms's model/ECU
+# thread. IMPORTANT boundary: the 2010+ small bikes (Monster 696 from 2011,
+# Monster 796, 1100 EVO, Hypermotard 796 and 1100 EVO) moved to a
+# Siemens/Continental M3C ECU — NOT this definition.
 
 [ecu]
 id = "ducati-iaw-5am"
 name = "Marelli IAW 5AM"
 manufacturer = "Ducati"
-models = ["Monster 696 (2008-2014)", "Monster 1100 (2009-2010)", "Hypermotard 796/1100"]
+models = [
+    "Monster 620 (2005-2006)",
+    "Monster 695 (2006-2008)",
+    "Monster 696 (2008-2010)",
+    "Monster 1000 (2005-2006)",
+    "Monster 1100 (2009-2010)",
+    "Monster S2R 800 (2005-2007)",
+    "Monster S2R 1000 (2006-2008)",
+    "Monster S4RS (2006-2008)",
+    "Multistrada 620 (2005-2006)",
+    "Multistrada 1100/1100S (2007-2009)",
+    "Hypermotard 1100/1100S (2007-2009)",
+    "SportClassic GT1000 / Sport 1000 / PaulSmart 1000 (2006-2010)",
+]
 bus = "k-line"
 verified = false
 notes = """
 3-pin FIAT-style diagnostic connector (same family as MV's), typically under
 the seat or near the battery. Only K-line, +12V, and GND are needed. Confirm
 pinout and connector location against the workshop manual before connecting.
+
+Dash self-diagnosis exists on these bikes (hold the left dash button while
+switching ignition on): codes group as 1.x TPS, 2.x pressure, 3.x coolant
+temp, 4.x air temp, 5.1/5.2 battery high/low, 6.x lambda (per
+ducatimonster.org and ducati.ms owner threads). Those dash codes do NOT map
+1:1 onto the KWP fault codes this definition reads — treat them as a
+cross-check, not the same numbering.
+
+2011+ Monster 696/796, Monster 1100 EVO, and Hypermotard 796/1100 EVO use a
+Siemens/Continental M3C ECU — this definition does not apply to them.
 """
 
 [init]
@@ -39,10 +68,17 @@ offset = 2
 length = 2
 scale = 0.25
 verified = false
+# Corrected from an earlier generic L-twin guess (1050-1150): the Monster
+# 696 owner's manual figure is 1300 ±50 rpm, corroborated across
+# ducatimonster.org idle threads; Monster 1100 owners report the same band.
+# Idle is set mechanically via the throttle-body bypass screws (~1/4 turn
+# steps, engine fully warm), not through the ECU.
 [channels.spec]
-min = 1050.0
-max = 1150.0
-condition = "warm idle, neutral, unverified — Ducati L-twin idle target, confirm per model"
+min = 1250.0
+max = 1350.0
+condition = "warm idle (coolant >100 °C), neutral — Monster 696 manual figure 1300 ±50 rpm, community-corroborated; verify per model"
+source = "ducatimonster.org"
+source_url = "https://www.ducatimonster.org/threads/229754/"
 
 [[channels]]
 key = "tps"
@@ -117,6 +153,8 @@ key = "tps_reset"
 name = "Throttle position (TPS) reset"
 description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
 procedure = [
+    "This is the electronic 'throttle body reset' the community runs via diagnostic software (IAWDiag exposes it under the '5AM PF2C' ECU profile, fast init — per ducati.ms)",
+    "A physically REPLACED TPS must first be set by millivolts on a multimeter — the electronic reset only re-zeros a known-good, correctly-mounted sensor (per ducati.ms TPS threads)",
     "Warm the engine to operating temperature, then switch it off (key on, engine off for the reset itself)",
     "Confirm the throttle is fully closed and the cable has correct freeplay — do not touch the throttle during the reset",
     "Run this routine and wait for the ECU to confirm completion",

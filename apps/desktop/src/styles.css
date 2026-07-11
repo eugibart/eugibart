@@ -56,6 +56,11 @@
   --viz-band: rgba(57, 135, 229, 0.10);
   --viz-grid: #31363f;
 
+  /* Link TEXT needs 4.5:1 (the viz hue is only graphics-grade 3:1).
+     #6db1f7: 5.5:1 on the warn-tinted mod-note, 6.4:1 on raised, 7.2:1
+     on panel — computed, incl. alpha-composited tint. */
+  --link: #6db1f7;
+
   /* Shape & motion */
   --radius: 10px;
   --radius-sm: 7px;
@@ -105,6 +110,10 @@
   --viz-series-deep: #1c5cab;
   --viz-band: rgba(47, 116, 212, 0.12);
   --viz-grid: #dfe3e9;
+
+  /* #2565b9: 5.2:1 on the warn-tinted mod-note, 5.4:1 on raised, 5.8:1
+     on white — computed, incl. alpha-composited tint. */
+  --link: #2565b9;
 
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 4px 16px rgba(16, 24, 40, 0.07);
 }
@@ -360,6 +369,26 @@ textarea { resize: vertical; }
   color: var(--warn);
   margin-bottom: 4px;
 }
+.mod-note-source { margin-top: 6px; }
+
+/* ---------- Community citations ---------- */
+
+/* Styled as a link but implemented as a button: it invokes the (scoped)
+   system-browser opener rather than navigating the webview. */
+.source-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12.5px;
+  font-family: inherit;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.source-link:hover { color: var(--text); }
+
+.gauge-citation { margin-top: 4px; }
 
 .btn {
   background: var(--bg-raised);

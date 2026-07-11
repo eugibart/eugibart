@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, Dtc, ModGuidanceInfo } from "../ipc";
 import { BikeProfile } from "../garage";
 import { applicableDtcNotes } from "../specResolution";
+import SourceLink from "../SourceLink";
 
 export default function DtcScreen({
   serviceMode,
@@ -119,6 +120,9 @@ export default function DtcScreen({
                     <span className="mod-note-label">For your mods — community, unverified</span>
                     <strong>{n.cause}</strong>
                     <p style={{ margin: "4px 0 0" }}>{n.check}</p>
+                    <div className="mod-note-source">
+                      <SourceLink site={n.source} url={n.sourceUrl} />
+                    </div>
                   </div>
                 ))}
               </div>

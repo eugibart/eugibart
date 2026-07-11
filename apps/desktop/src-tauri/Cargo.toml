@@ -26,6 +26,7 @@ motodiag-kwp2000 = { path = "../../../crates/protocol-kwp2000" }
 motodiag-ecu-defs = { path = "../../../crates/ecu-defs" }
 motodiag-ecu-sim = { path = "../../../crates/ecu-sim" }
 motodiag-app-core = { path = "../../../crates/app-core" }
+tauri-plugin-opener = "2"
 
 # Shipping profile for the desktop binary users actually install. Size-lean
 # (opt-level "s" + full LTO) — the timing-critical serial work is I/O-bound,

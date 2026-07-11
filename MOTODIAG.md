@@ -33,6 +33,13 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   labeled unverified), or a target you typed in yourself, which always wins.
   Bikes MotoDiag can't talk to yet (e.g. the pre-2003 F4 750's Marelli 1.6M)
   say so honestly instead of guessing
+- **Cited community knowledge** — every community-sourced figure and mod note
+  carries a clickable citation ("Source: mvagusta.net ↗") to the forum thread
+  or tech article it came from; the schema *requires* a source on every
+  community claim, so uncited folklore structurally cannot ship. Guidance is
+  written per ECU generation (software-mapped 5SM/5AM/5.9M vs the older
+  socketed-EPROM bikes) so you're never told to turn a trimmer your ECU
+  doesn't have — see the coverage tables in [docs/PROTOCOL.md](docs/PROTOCOL.md)
 - **One-click bike health report** — self-contained HTML snapshot (identity,
   DTCs with guidance, live data) for pre-purchase inspections or sending to
   a mechanic

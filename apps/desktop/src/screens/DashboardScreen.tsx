@@ -3,6 +3,7 @@ import { api, ConnectionInfo, DefinitionInfo, ModGuidanceInfo, Reading } from ".
 import { BikeProfile, useGarage } from "../garage";
 import { resolveSpecs, inRange, ResolvedSpec } from "../specResolution";
 import Sparkline from "../Sparkline";
+import SourceLink from "../SourceLink";
 import SpecOverridesEditor from "../SpecOverridesEditor";
 
 const POLL_INTERVAL_MS = 500;
@@ -117,6 +118,11 @@ export default function DashboardScreen({
                   <span aria-hidden="true">{range ? "✓" : r.value > (spec.max ?? Infinity) ? "▲" : "▼"}</span>
                   {range ? `in range (${rangeText(spec)})` : `outside ${rangeText(spec)}`}
                   {spec.source !== "stock" && ` — ${spec.label}`}
+                </div>
+              )}
+              {spec?.citationSite && spec.citationUrl && (
+                <div className="gauge-citation">
+                  <SourceLink site={spec.citationSite} url={spec.citationUrl} />
                 </div>
               )}
               {/* Fresh copy per render: the ring buffer mutates in place, so

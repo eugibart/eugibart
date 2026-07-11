@@ -139,6 +139,19 @@ touches one of these behaviours, re-check the criterion it implements.
 - High-contrast / forced-colors mode is not yet explicitly styled
   (`forced-colors` media query) — tracked as future work.
 
+## Citations
+
+Community-sourced figures and mod notes carry a clickable "Source: {site} ↗"
+control. Accessibility notes: it is a real `<button>` (it invokes the scoped
+system-browser opener, not webview navigation) with a visually-hidden
+"(opens in your browser)" suffix so screen-reader users know the context
+switch is coming; its color is a dedicated `--link` token computed per theme
+for **text-grade 4.5:1** on every surface it appears on — including the
+alpha-composited amber mod-note tint (dark `#6db1f7`: 5.5–7.2:1; light
+`#2565b9`: 5.2–5.8:1). The axe pass caught the original attempt to reuse the
+graphics-grade viz hue here (3.4:1 on the tint) — that's why the separate
+token exists.
+
 ## Theming
 
 The app ships dark and light themes: a toggle in the top bar, persisted in

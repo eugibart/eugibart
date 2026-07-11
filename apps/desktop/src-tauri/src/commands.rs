@@ -27,6 +27,9 @@ pub struct ChannelSpecInfo {
     pub max: Option<f64>,
     pub target: Option<f64>,
     pub condition: String,
+    /// Citation for community-sourced figures (site name + https URL).
+    pub source: Option<String>,
+    pub source_url: Option<String>,
 }
 
 #[derive(serde::Serialize)]
@@ -101,6 +104,8 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                         max: s.max,
                         target: s.target,
                         condition: s.condition.clone(),
+                        source: s.source.clone(),
+                        source_url: s.source_url.clone(),
                     }),
                 })
                 .collect(),

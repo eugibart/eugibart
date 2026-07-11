@@ -63,14 +63,15 @@ offset = 2
 length = 2
 scale = 0.25
 verified = false
-# Typical inline-4/triple sportbike warm idle target; NOT taken from an MV
-# workshop manual — a starting point to sanity-check against, not a fact.
-# Confirm the real spec per model (displacement affects idle target) before
-# relying on this range for anything.
+# MV FAQ (Brad@Moto-One, the community's reference tuner) gives the F4 1000
+# idle target as 1150 ±50 rpm; the Brutale family runs the same band. Still
+# unverified on the wire against a real ECU, but no longer a generic guess.
 [channels.spec]
 min = 1100.0
-max = 1300.0
-condition = "warm idle, neutral, unverified — confirm per model"
+max = 1200.0
+condition = "warm idle, neutral — F4 1000 target 1150 ±50 rpm per MV FAQ; Brutale family similar, verify per model"
+source = "mvfaq.blogspot.com"
+source_url = "https://mvfaq.blogspot.com/2005/11/tuning-4-f4-1000-idle-throttle.html"
 
 [[channels]]
 key = "tps"
@@ -81,10 +82,15 @@ offset = 2
 length = 2
 scale = 0.0015259  # 100 / 65535
 verified = false
+# Marelli non-linear TPS baseline: ~150 mV fully closed (≈3% of a 5 V
+# sensor); at the idle stop the MV FAQ quotes Brutale 750 = 1.5–1.7°
+# (315–335 mV) and Brutale 910 = 1.9–2.5°.
 [channels.spec]
 min = 0.0
 max = 3.0
-condition = "throttle fully closed, key on engine off, unverified"
+condition = "throttle fully closed — Marelli baseline ~150 mV ≈ 3%; idle stop: Brutale 750 1.5–1.7° (315–335 mV), 910 1.9–2.5° per MV FAQ"
+source = "mvfaq.blogspot.com"
+source_url = "https://mvfaq.blogspot.com/2005/12/tuning-1-throttle-position-sensor-tps.html"
 
 [[channels]]
 key = "ect"
@@ -121,10 +127,17 @@ offset = 2
 length = 1
 scale = 0.0625
 verified = false
+# The Brutale charging system is a notorious weak point. Community figures:
+# healthy is 14–15 V DC at the battery with the engine running, regulator
+# capping ~14.5 V — and CHECK AT ~2000 RPM, NOT IDLE. Stator sanity check:
+# ~1 Ω between each phase pair; 20–30 V AC at idle rising to 60–70 V revved.
+# Good AC from the stator but <14 V at the battery = regulator/rectifier.
 [channels.spec]
-min = 13.0
-max = 14.8
-condition = "engine running above idle, healthy charging system, unverified"
+min = 13.5
+max = 15.0
+condition = "engine running, checked at ~2000 rpm (not idle) — regulator should cap ~14.5 V; won't reach 14 V = reg/rec or stator"
+source = "mvagusta.net"
+source_url = "https://www.mvagusta.net/threads/regulator-rectifier.231393/"
 
 [[channels]]
 key = "map"
@@ -186,6 +199,7 @@ key = "tps_reset"
 name = "Throttle position (TPS) reset"
 description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
 procedure = [
+    "On the 5SM the TPS reset is SOFTWARE-ONLY — do not set the sensor by hand with a multimeter; the manual 150 mV setup applies to the earlier 1.6M-ECU bikes (per mvfaq.blogspot.com, mvagusta.net)",
     "Warm the engine to operating temperature, then switch it off (key on, engine off for the reset itself)",
     "Confirm the throttle is fully closed and the cable has correct freeplay — do not touch the throttle during the reset",
     "Run this routine and wait for the ECU to confirm completion",
@@ -228,7 +242,8 @@ key = "co_trim"
 name = "CO trim adjustment"
 description = "Adjust idle CO trim. Persisted by the ECU — follow the workshop procedure."
 procedure = [
-    "Sync the throttle bodies FIRST (Sync tab, vacuometro) — CO trim on unbalanced bodies chases a moving target",
+    "The 5SM has NO physical CO trimmer — CO is a software fuel trim set via diagnostics; the trimmer/dashpot belongs to the earlier 1.6M ECU (per mvfaq.blogspot.com). Community CO target: 3.5 ±0.5% at idle",
+    "Sync the throttle bodies FIRST (Sync tab, vacuometro) — CO trim on unbalanced bodies chases a moving target. Air-bleed screws interact: opening one changes CO and idle together",
     "Warm the engine fully; idle should already be within its RPM spec (see the rpm channel) before touching CO",
     "Connect an exhaust gas analyzer if available — this routine adjusts ECU trim, it does not measure exhaust CO itself",
     "Run this routine in small increments, re-checking idle RPM and analyzer reading between each",

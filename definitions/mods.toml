@@ -1,11 +1,19 @@
 # Community mod guidance: how a modified bike differs from stock.
 #
-# EVERYTHING in this file is unverified community knowledge by construction —
-# the schema has no `verified` field on purpose, and the UI labels every use
-# "community reference, unverified". Conditions must self-describe their
-# community origin. Keep content minimal and honest: only add an entry where
-# forum/tuner consensus genuinely exists (today that's CO/idle behavior on
-# open exhausts), never to feel complete.
+# EVERY entry must carry `source` (site name) + `source_url` (https) — the
+# schema requires it and the validator rejects anything without it. A
+# community claim without provenance is a rumor; if it can't be cited, it
+# doesn't ship. There is deliberately no `verified` field: community content
+# can never be promoted to fact by flipping a flag, and the UI labels every
+# use "community, unverified".
+#
+# NOTE the adjustments list is currently EMPTY, on purpose. Earlier versions
+# shipped numeric idle-range adjustments for open-exhaust bikes; research
+# corroborated the *direction* (stock lambda-seeking maps idle high/uneven
+# and run lean at low rpm with open pipes) but no citable source quotes the
+# numeric bounds — so the numbers were cut and the knowledge lives on as the
+# cited notes below. Numeric adjustments return when someone produces a
+# citable figure.
 #
 # Matching: an entry applies to a profile iff, for EVERY `requires` field
 # present, the profile's value is in the listed set. When several adjustments
@@ -17,70 +25,54 @@
 # DTC codes need NOT be in the definition's table — a mod note is most useful
 # exactly for codes we haven't documented.
 
-# ------------- MV Agusta IAW 5SM: open exhaust on the stock EPROM -------------
-
-[[adjustments]]
-definition_id = "mv-5sm-brutale-910"
-
-[adjustments.requires]
-exhaust = ["slip-on-open", "full-system"]
-eprom = ["stock"]
-
-[[adjustments.channel_overrides]]
-channel = "rpm"
-min = 1150.0
-max = 1450.0
-condition = "warm idle, neutral, open exhaust on stock EPROM — community reference, unverified"
-note = "Open pipes on the stock map commonly idle higher and less evenly than the factory 1100-1300 rpm figure. Community consensus is to accept a slightly higher idle rather than chase the stock number."
-
-# ------- MV Agusta IAW 5SM: dedicated EPROM or custom map (any exhaust) -------
-
-[[adjustments]]
-definition_id = "mv-5sm-brutale-910"
-
-[adjustments.requires]
-eprom = ["dealer-eprom", "custom-map"]
-
-[[adjustments.channel_overrides]]
-channel = "rpm"
-min = 1100.0
-max = 1400.0
-condition = "warm idle, neutral, non-stock EPROM — community reference, unverified; your tuner's figure wins"
-note = "With a dedicated EPROM the correct idle is whatever the map was built for. Ask whoever supplied the EPROM for their figure and enter it as your own target — it overrides this range."
-
 # --------------------------- Service procedure caveats ---------------------------
 
+# MV 5SM + open exhaust: the stock map keeps chasing the lambda signal the
+# missing restriction has skewed, running lean and snatchy at low rpm.
 [[procedure_notes]]
 definition_id = "mv-5sm-brutale-910"
 routine = "co_trim"
-note = "Open exhaust: the stock CO target assumes the factory silencers' back-pressure. Sniffer readings at an open silencer read leaner than the engine actually runs — set CO against your tuner's figure (or the EPROM supplier's), not the factory number."
+note = "Open exhaust on the stock map: owners consistently report lean, snatchy low-rpm running because the stock ECU keeps hunting for the lambda signal the missing restriction has skewed. A CO trim alone won't fix it — the community fix is a dedicated EPROM/kit ECU (or aftermarket ECU) matched to the exhaust."
+source = "mvagusta.net"
+source_url = "https://www.mvagusta.net/threads/eprom-ecu-chip-for-open-exhaust.48444/"
 
 [procedure_notes.requires]
 exhaust = ["slip-on-open", "full-system"]
 
+# MV 5SM + dedicated EPROM/custom map: the map already carries the fueling.
 [[procedure_notes]]
 definition_id = "mv-5sm-brutale-910"
 routine = "co_trim"
-note = "Non-stock EPROM: the map already carries its own fueling — a large CO trim on top of it usually means something else is wrong (sync, filter, TPS). Re-check those before trimming."
+note = "Dedicated EPROM / kit ECU: owners report rock-solid idle and smooth on/off throttle once the matched map is in — the fueling for your exhaust already lives in the map. Ask whoever supplied it for their idle and CO figures and enter those as your own targets; they override the stock reference here."
+source = "mvagusta.net"
+source_url = "https://www.mvagusta.net/threads/eprom-ecu-chip-for-open-exhaust.48444/"
 
 [procedure_notes.requires]
 eprom = ["dealer-eprom", "custom-map"]
 
+# Ducati 5AM + open pipes: decel popping is lean-down-low, not a fault to
+# chase with resets. The Termignoni kit's dedicated "RACE" ECU still runs
+# closed-loop on the O2 sensors unless they're disabled.
 [[procedure_notes]]
-definition_id = "mv-5sm-brutale-910"
+definition_id = "ducati-iaw-5am"
 routine = "tps_reset"
-note = "High-flow filter: after a TPS reset the ECU relearns idle airflow — expect the idle to wander for the first few minutes of running before settling."
+note = "Open pipes / Termignoni kit: decel popping is a lean condition down low, not something a TPS reset will cure. Note the Termi kit's 'RACE' ECU still runs closed-loop on the O2 sensors unless they're disabled — the fixes owners actually use are dB-killers, a BoosterPlug, or a Rexxer flash."
+source = "ducatimonster.org"
+source_url = "https://www.ducatimonster.org/threads/357907/"
 
 [procedure_notes.requires]
-air_filter = ["high-flow"]
+exhaust = ["slip-on-open", "full-system"]
 
 # ------------------------------- DTC likely-causes -------------------------------
 
+# MV 5SM lean code with open pipes on the stock map.
 [[dtc_notes]]
 definition_id = "mv-5sm-brutale-910"
 code = 0x0171
-cause = "Lean mixture from an open exhaust running the stock EPROM map (your mods make this the most likely culprit)"
-check = "Before chasing sensors: this code is expected with open pipes on the stock map. A dedicated EPROM or custom map for your exhaust is the real fix; clearing the code without one will only bring it back."
+cause = "Lean mixture from an open exhaust running the stock map (your mods make this the most likely culprit — decel pops and bangs are the same lean condition)"
+check = "Before chasing sensors: owners report this is expected with open pipes on the stock map. A dedicated EPROM or custom map matched to your exhaust is the real fix; clearing the code without one will only bring it back."
+source = "mvagusta.net"
+source_url = "https://www.mvagusta.net/threads/pops-and-bangs-in-my-exhaust.9568/"
 
 [dtc_notes.requires]
 exhaust = ["slip-on-open", "full-system"]

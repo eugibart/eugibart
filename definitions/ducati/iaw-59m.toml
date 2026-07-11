@@ -1,4 +1,4 @@
-# Ducati — Magneti Marelli IAW 59M (e.g. 748/916/996/998, early Monster/SS)
+# Ducati — Magneti Marelli IAW 59M / 5.9M (liquid-cooled range, ~2001-2006)
 #
 # STATUS: UNVERIFIED SCAFFOLD, same standing as the other definitions in this
 # repo. Older K-line generation; ISO 9141 5-baud slow init is the standard
@@ -6,18 +6,44 @@
 # unconfirmed until tested against real hardware. Another "pure reuse" case:
 # only slow_init_5baud (already implemented and tested in
 # protocol-kwp2000::init) and this data file are involved — no new code.
+#
+# "59M" and "5.9M" are the same ECU — Marelli's dotted/undotted notation
+# (per carmo-electronics.com, ecurepair.com.au, tuneboy.com.au listings).
+#
+# CORRECTION from earlier versions of this file: the 748, 916, and 996 do
+# NOT use this ECU — they run the earlier Weber-Marelli P8 (916 to ~1995)
+# and 1.6M/16M generations (per ducati.ms model/ECU thread, bikeboy.org,
+# parts listings). Claiming them here risked a false "it connected" on the
+# wrong protocol generation. The 5.9M starts with the Testastretta era:
+# 996R (2001), 998, 749/999, ST4S, Monster S4, and the twin-spark SS.
 
 [ecu]
 id = "ducati-iaw-59m"
-name = "Marelli IAW 59M"
+name = "Marelli IAW 59M (5.9M)"
 manufacturer = "Ducati"
-models = ["748 (1995-2003)", "916/996/998", "Monster 900/S4 (early)", "SS (carbureted-to-fuel-injection transition models)"]
+models = [
+    "998 (2002-2004)",
+    "996R (2001)",
+    "749 (2003-2006)",
+    "999 (2003-2006)",
+    "ST4S (2001-2005)",
+    "Monster S4 (2001-2003)",
+    "SuperSport 800/1000 DS (2003-2007)",
+]
 bus = "k-line"
 verified = false
 notes = """
 3-pin FIAT-style diagnostic connector. This ECU generation is old enough that
 fast init may not be supported — 5-baud slow init is the working assumption
 here and should be the first thing verified on hardware.
+
+Tuning on the 5.9M generation is reflash-based (Nemesis, TuneBoy) — there is
+no socketed EPROM chip. The famous chip-swap culture (Ultimap, FIM) belongs
+to the earlier P8/1.6M bikes (748/916/996), which this definition does NOT
+cover (per ducatimonster.org Nemesis threads, ducati.ms).
+
+749R/999R race variants may carry a different (15RC) unit — unverified; check
+the ECU label before assuming this definition applies.
 """
 
 [init]
@@ -39,10 +65,35 @@ offset = 2
 length = 2
 scale = 0.25
 verified = false
+# Community figure for the desmoquattro/Testastretta family: 1100-1200 rpm
+# warm idle, ~1200 recommended (ducati.ms; the discussion is 916-family but
+# the target carried over to the 998/749/999 era).
 [channels.spec]
-min = 1000.0
-max = 1150.0
-condition = "warm idle, neutral, unverified — Ducati L-twin idle target, confirm per model"
+min = 1100.0
+max = 1200.0
+condition = "warm idle, neutral — community figure ~1200 rpm for the desmoquattro family; verify per model"
+source = "ducati.ms"
+source_url = "https://www.ducati.ms/threads/82816/"
+
+[[channels]]
+key = "tps"
+name = "Throttle position"
+unit = "%"
+request = [0x21, 0x02]
+offset = 2
+length = 2
+scale = 0.0015259
+verified = false
+# The single most-cited setup figure in this community: Marelli non-linear
+# TPS baseline = 150 mV at fully closed throttle (147-152 mV repeatable),
+# then the idle stop is wound to ~380-390 mV (748R 2.2°, 996R/998 2.3°) —
+# Brad Black / BikeBoy.org, mirrored widely on ducati.ms.
+[channels.spec]
+min = 0.0
+max = 3.0
+condition = "throttle fully closed — Marelli baseline 150 mV ≈ 3%; idle stop ~380-390 mV (748R 2.2°, 996R/998 2.3°) per BikeBoy"
+source = "bikeboy.org (Brad Black)"
+source_url = "https://bradthebikeboy.blogspot.com/2014/01/996r-and-998-and-748r-non-linear-tps.html"
 
 [[channels]]
 key = "ect"
@@ -64,10 +115,17 @@ offset = 2
 length = 1
 scale = 0.0625
 verified = false
+# Charging on this family is a notorious weak point (pre-1998-design
+# rectifiers failed en masse; yellow stator-wire connectors melt). Healthy:
+# rises with rpm to ~13.8-14.2 V by 3000-4000 rpm; ~13.5 V is minimum
+# adequate. Voltage that WON'T CLIMB with revs = heat-damaged stator
+# windings or melted connectors, even if it reads "OK" at idle.
 [channels.spec]
-min = 13.0
-max = 14.8
-condition = "engine running above idle, healthy charging system, unverified"
+min = 13.5
+max = 14.4
+condition = "engine running at 3000-4000 rpm — should reach 13.8-14.2 V; voltage that won't climb with revs = stator/connectors"
+source = "ducati.ms"
+source_url = "https://www.ducati.ms/threads/750075/"
 
 [dtc]
 read_request = [0x18, 0x02, 0xFF, 0x00]

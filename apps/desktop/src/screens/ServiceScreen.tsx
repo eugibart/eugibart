@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, ConnectionInfo, ModGuidanceInfo, RoutineInfo } from "../ipc";
 import { BikeProfile } from "../garage";
 import { applicableProcedureNotes } from "../specResolution";
+import SourceLink from "../SourceLink";
 
 export default function ServiceScreen({
   connection,
@@ -120,10 +121,13 @@ export default function ServiceScreen({
               </>
             )}
             {applicableProcedureNotes(connection.definition_id, guidance, activeProfile, r.key).map(
-              (note, i) => (
+              (n, i) => (
                 <div className="mod-note" key={i}>
                   <span className="mod-note-label">For your mods — community, unverified</span>
-                  {note}
+                  {n.note}
+                  <div className="mod-note-source">
+                    <SourceLink site={n.source} url={n.sourceUrl} />
+                  </div>
                 </div>
               ),
             )}

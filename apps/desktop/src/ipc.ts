@@ -6,6 +6,9 @@ export interface ChannelSpecInfo {
   max: number | null;
   target: number | null;
   condition: string;
+  /** Citation for community-sourced figures (site name + https URL). */
+  source: string | null;
+  source_url: string | null;
 }
 
 export interface ChannelInfo {
@@ -71,6 +74,9 @@ export interface ChannelOverrideInfo {
   target: number | null;
   condition: string;
   note: string | null;
+  /** Required by the schema: every community claim carries its citation. */
+  source: string;
+  source_url: string;
 }
 
 export interface SpecAdjustmentInfo {
@@ -84,6 +90,8 @@ export interface ProcedureNoteInfo {
   routine: string;
   requires: ModRequires;
   note: string;
+  source: string;
+  source_url: string;
 }
 
 export interface DtcNoteInfo {
@@ -92,6 +100,8 @@ export interface DtcNoteInfo {
   requires: ModRequires;
   cause: string;
   check: string;
+  source: string;
+  source_url: string;
 }
 
 /** Community knowledge about modified bikes — unverified by construction. */
@@ -156,6 +166,8 @@ export interface BikeReportSpecInfo {
   condition: string;
   source: string;
   label: string;
+  citation_site: string | null;
+  citation_url: string | null;
 }
 
 export interface BikeReportInfo {

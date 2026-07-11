@@ -176,6 +176,13 @@ pub struct ChannelSpec {
     /// The condition this spec applies under — specs are meaningless without
     /// one ("1100-1300 rpm" means nothing without "warm idle, neutral").
     pub condition: String,
+    /// Where the figure comes from, when it's community-sourced rather than
+    /// factory-manual (site name shown in the UI, e.g. "ducatimonster.org").
+    #[serde(default)]
+    pub source: Option<String>,
+    /// The specific page/thread backing the figure (https).
+    #[serde(default)]
+    pub source_url: Option<String>,
 }
 
 impl ChannelSpec {
@@ -491,6 +498,8 @@ mod tests {
             max: Some(1300.0),
             target: None,
             condition: "warm idle, neutral".into(),
+            source: None,
+            source_url: None,
         };
         assert_eq!(idle_rpm.in_range(1200.0), Some(true));
         assert_eq!(idle_rpm.in_range(900.0), Some(false));
@@ -501,6 +510,8 @@ mod tests {
             max: None,
             target: Some(2.0),
             condition: "any".into(),
+            source: None,
+            source_url: None,
         };
         assert_eq!(no_bounds.in_range(2.0), None);
 
@@ -509,6 +520,8 @@ mod tests {
             max: None,
             target: None,
             condition: "engine off".into(),
+            source: None,
+            source_url: None,
         };
         assert_eq!(min_only.in_range(12.8), Some(true));
         assert_eq!(min_only.in_range(9.0), Some(false));

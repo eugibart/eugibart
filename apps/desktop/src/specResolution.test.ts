@@ -23,14 +23,14 @@ const def: DefinitionInfo = {
       name: "Engine speed",
       unit: "rpm",
       verified: true,
-      spec: { min: 1100, max: 1300, target: null, condition: "warm idle" },
+      spec: { min: 1100, max: 1300, target: null, condition: "warm idle", source: null, source_url: null },
     },
     {
       key: "batt",
       name: "Battery voltage",
       unit: "V",
       verified: false,
-      spec: { min: 13, max: 14.8, target: null, condition: "engine running" },
+      spec: { min: 13, max: 14.8, target: null, condition: "engine running", source: null, source_url: null },
     },
     { key: "iat", name: "Intake air temperature", unit: "°C", verified: false, spec: null },
   ],
@@ -50,6 +50,8 @@ const guidance: ModGuidanceInfo = {
           target: null,
           condition: "warm idle, open exhaust — community reference, unverified",
           note: "idles higher",
+          source: "mvagusta.net",
+          source_url: "https://www.mvagusta.net/threads/example.1/",
         },
       ],
     },
@@ -67,6 +69,8 @@ const guidance: ModGuidanceInfo = {
           target: null,
           condition: "should never win",
           note: null,
+          source: "mvagusta.net",
+          source_url: "https://www.mvagusta.net/threads/example.2/",
         },
       ],
     },
@@ -77,6 +81,8 @@ const guidance: ModGuidanceInfo = {
       routine: "co_trim",
       requires: { exhaust: ["slip-on-open", "full-system"], eprom: null, air_filter: null },
       note: "open exhaust CO caveat",
+      source: "mvagusta.net",
+      source_url: "https://www.mvagusta.net/threads/example.3/",
     },
   ],
   dtc_notes: [
@@ -86,6 +92,8 @@ const guidance: ModGuidanceInfo = {
       requires: { exhaust: ["slip-on-open"], eprom: ["stock"], air_filter: null },
       cause: "lean from open pipes",
       check: "get a proper map",
+      source: "ducati.ms",
+      source_url: "https://www.ducati.ms/threads/example.4/",
     },
   ],
 };
@@ -193,6 +201,8 @@ describe("inRange", () => {
     verified: true,
     label: "stock reference",
     note: null,
+    citationSite: null,
+    citationUrl: null,
   };
   it("classifies inside/outside and honors open bounds", () => {
     expect(inRange(spec, 15)).toBe(true);
@@ -206,7 +216,7 @@ describe("guidance note selection", () => {
   it("procedure notes apply only to matching mods and routine", () => {
     expect(
       applicableProcedureNotes("test-ecu", guidance, profileWith({ mods: moddedMods }), "co_trim"),
-    ).toEqual(["open exhaust CO caveat"]);
+    ).toEqual([{ note: "open exhaust CO caveat", source: "mvagusta.net", sourceUrl: "https://www.mvagusta.net/threads/example.3/" }]);
     expect(
       applicableProcedureNotes("test-ecu", guidance, profileWith({}), "co_trim"),
     ).toEqual([]);
@@ -218,7 +228,7 @@ describe("guidance note selection", () => {
   it("dtc notes match by code and mods; none without a profile", () => {
     expect(
       applicableDtcNotes("test-ecu", guidance, profileWith({ mods: moddedMods }), 0x0171),
-    ).toEqual([{ cause: "lean from open pipes", check: "get a proper map" }]);
+    ).toEqual([{ cause: "lean from open pipes", check: "get a proper map", source: "ducati.ms", sourceUrl: "https://www.ducati.ms/threads/example.4/" }]);
     expect(applicableDtcNotes("test-ecu", guidance, null, 0x0171)).toEqual([]);
   });
 });

@@ -24,6 +24,11 @@ pub struct BikeReportSpec {
     /// "stock" | "community-adjusted" | "user-override".
     pub source: String,
     pub label: String,
+    /// Citation (site name + https URL) when the figure is community-sourced.
+    #[serde(default)]
+    pub citation_site: Option<String>,
+    #[serde(default)]
+    pub citation_url: Option<String>,
 }
 
 /// The saved bike profile driving this report, passed in from the frontend
@@ -219,6 +224,8 @@ indicative, not authoritative.</div>"#,
                         max: spec.max,
                         target: spec.target,
                         condition: spec.condition.clone(),
+                        source: None,
+                        source_url: None,
                     };
                     let range_text = range_text(&channel_spec);
                     let cell_class = match channel_spec.in_range(r.value) {
@@ -226,8 +233,18 @@ indicative, not authoritative.</div>"#,
                         Some(false) => "bad",
                         None => "meta",
                     };
+                    // The report opens in a browser, so citations are real
+                    // links there (only https URLs are ever emitted).
+                    let citation = match (&spec.citation_site, &spec.citation_url) {
+                        (Some(site), Some(url)) if url.starts_with("https://") => format!(
+                            " · <a href=\"{}\" rel=\"noopener noreferrer\">{}</a>",
+                            esc(url),
+                            esc(site)
+                        ),
+                        _ => String::new(),
+                    };
                     html.push_str(&format!(
-                        "<td class=\"{cell_class}\">{}</td><td class=\"meta\">{}</td>",
+                        "<td class=\"{cell_class}\">{}</td><td class=\"meta\">{}{citation}</td>",
                         esc(&range_text),
                         esc(&spec.label),
                     ));
@@ -348,6 +365,8 @@ mod tests {
                 condition: "warm idle, open exhaust — community reference, unverified".into(),
                 source: "community-adjusted".into(),
                 label: "community reference — unverified".into(),
+                citation_site: Some("mvagusta.net".into()),
+                citation_url: Some("https://www.mvagusta.net/threads/example.1/".into()),
             }],
         };
         let html = render_html(&ReportInput {
@@ -367,6 +386,9 @@ mod tests {
         assert!(html.contains("community-adjusted for this bike"));
         assert!(html.contains("1150.00–1450.00"));
         assert!(html.contains("community reference"));
+        // The citation renders as a real link in the browser-opened report.
+        assert!(html
+            .contains("<a href=\"https://www.mvagusta.net/threads/example.1/\" rel=\"noopener noreferrer\">mvagusta.net</a>"));
         assert!(!html.contains("<script>alert(1)</script>"));
         assert!(html.contains("&lt;script&gt;"));
     }
@@ -389,6 +411,8 @@ mod tests {
                 condition: "warm idle, neutral".into(),
                 source: "stock".into(),
                 label: "stock reference".into(),
+                citation_site: None,
+                citation_url: None,
             }],
         };
         let html = render_html(&ReportInput {

@@ -6,6 +6,10 @@ mod state;
 
 fn main() {
     tauri::Builder::default()
+        // Opens community-citation links in the system browser. Scoped by
+        // capabilities/default.json; the app only ever passes https URLs
+        // that ship inside the embedded guidance TOML.
+        .plugin(tauri_plugin_opener::init())
         .manage(state::AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::list_definitions,

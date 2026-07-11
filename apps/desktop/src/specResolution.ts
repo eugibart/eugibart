@@ -28,6 +28,10 @@ export interface ResolvedSpec {
   label: string;
   /** Rationale that came with a community adjustment, if any. */
   note: string | null;
+  /** Citation (site name + https URL), when the figure is community-sourced.
+   *  Stock specs may carry one too (corrected figures cite their thread). */
+  citationSite: string | null;
+  citationUrl: string | null;
 }
 
 const SOURCE_LABELS: Record<SpecSource, string> = {
@@ -55,7 +59,10 @@ export function resolveSpecs(
 
   // First matching adjustment per channel wins (mods.toml is ordered
   // most-specific first and documents this).
-  const adjusted: Record<string, { spec: ChannelSpecInfo; note: string | null }> = {};
+  const adjusted: Record<
+    string,
+    { spec: ChannelSpecInfo; note: string | null; site: string; url: string }
+  > = {};
   if (guidance && profile) {
     for (const adj of guidance.adjustments) {
       if (adj.definition_id !== def.id) continue;
@@ -63,8 +70,17 @@ export function resolveSpecs(
       for (const over of adj.channel_overrides) {
         if (!(over.channel in adjusted)) {
           adjusted[over.channel] = {
-            spec: { min: over.min, max: over.max, target: over.target, condition: over.condition },
+            spec: {
+              min: over.min,
+              max: over.max,
+              target: over.target,
+              condition: over.condition,
+              source: over.source,
+              source_url: over.source_url,
+            },
             note: over.note,
+            site: over.source,
+            url: over.source_url,
           };
         }
       }
@@ -83,27 +99,39 @@ export function resolveSpecs(
         verified: false,
         label: SOURCE_LABELS["user-override"],
         note: null,
+        citationSite: null,
+        citationUrl: null,
       };
       continue;
     }
     const adj = adjusted[channel.key];
     if (adj) {
       out[channel.key] = {
-        ...adj.spec,
+        min: adj.spec.min,
+        max: adj.spec.max,
+        target: adj.spec.target,
+        condition: adj.spec.condition,
         source: "community-adjusted",
         verified: false,
         label: SOURCE_LABELS["community-adjusted"],
         note: adj.note,
+        citationSite: adj.site,
+        citationUrl: adj.url,
       };
       continue;
     }
     if (channel.spec) {
       out[channel.key] = {
-        ...channel.spec,
+        min: channel.spec.min,
+        max: channel.spec.max,
+        target: channel.spec.target,
+        condition: channel.spec.condition,
         source: "stock",
         verified: channel.verified,
         label: SOURCE_LABELS.stock,
         note: null,
+        citationSite: channel.spec.source,
+        citationUrl: channel.spec.source_url,
       };
     }
   }
@@ -124,7 +152,7 @@ export function applicableProcedureNotes(
   guidance: ModGuidanceInfo | null,
   profile: BikeProfile | null,
   routineKey: string,
-): string[] {
+): { note: string; source: string; sourceUrl: string }[] {
   if (!guidance || !profile) return [];
   return guidance.procedure_notes
     .filter(
@@ -133,7 +161,7 @@ export function applicableProcedureNotes(
         n.routine === routineKey &&
         modsMatch(n.requires, profile.mods),
     )
-    .map((n) => n.note);
+    .map((n) => ({ note: n.note, source: n.source, sourceUrl: n.source_url }));
 }
 
 export function applicableDtcNotes(
@@ -141,11 +169,16 @@ export function applicableDtcNotes(
   guidance: ModGuidanceInfo | null,
   profile: BikeProfile | null,
   code: number,
-): { cause: string; check: string }[] {
+): { cause: string; check: string; source: string; sourceUrl: string }[] {
   if (!guidance || !profile) return [];
   return guidance.dtc_notes
     .filter(
       (n) => n.definition_id === defId && n.code === code && modsMatch(n.requires, profile.mods),
     )
-    .map((n) => ({ cause: n.cause, check: n.check }));
+    .map((n) => ({
+      cause: n.cause,
+      check: n.check,
+      source: n.source,
+      sourceUrl: n.source_url,
+    }));
 }

@@ -128,23 +128,67 @@ fn shipped_catalog_and_mod_guidance_load_and_cross_validate() {
         |b| b.definition_id.as_deref() == Some("mv-5sm-brutale-910") && b.model.contains("910")
     ));
 
+    // The corrected catalog: mis-mapped bikes became documented gaps.
+    let hm796 = catalog
+        .bikes
+        .iter()
+        .find(|b| b.model.contains("Hypermotard 796"))
+        .expect("Hypermotard 796 entry present");
+    assert!(
+        hm796.definition_id.is_none()
+            && hm796
+                .gap_note
+                .as_deref()
+                .is_some_and(|n| n.contains("Siemens")),
+        "Hypermotard 796 must be a Siemens gap entry, not a 5AM claim"
+    );
+    for model in ["916", "748", "996"] {
+        let bike = catalog
+            .bikes
+            .iter()
+            .find(|b| b.model == model)
+            .unwrap_or_else(|| panic!("{model} entry present"));
+        assert!(
+            bike.definition_id.is_none(),
+            "{model} runs P8/1.6M — must be a gap entry, not mapped to the 59M"
+        );
+    }
+    // ...while the verified additions resolve to real definitions.
+    for (model, def) in [
+        ("Monster 695", "ducati-iaw-5am"),
+        ("SportClassic GT1000", "ducati-iaw-5am"),
+        ("749", "ducati-iaw-59m"),
+        ("999", "ducati-iaw-59m"),
+        ("ST4S", "ducati-iaw-59m"),
+    ] {
+        assert!(
+            catalog
+                .bikes
+                .iter()
+                .any(|b| b.model == model && b.definition_id.as_deref() == Some(def)),
+            "{model} should map to {def}"
+        );
+    }
+
     let mods_text = std::fs::read_to_string(dir.join("mods.toml")).expect("mods.toml readable");
     let guidance =
         motodiag_ecu_defs::ModGuidance::from_toml(&mods_text, "mods.toml").expect("mods parses");
     guidance
         .validate(&registry)
         .expect("mod guidance cross-validates against shipped definitions");
-    assert!(!guidance.adjustments.is_empty());
+    // Adjustments are deliberately empty: research corroborated the earlier
+    // numeric bounds' direction but no source quotes the numbers, so they
+    // were cut (cited-or-cut policy). Notes carry the knowledge instead.
+    assert!(guidance.adjustments.is_empty());
     assert!(!guidance.procedure_notes.is_empty());
     assert!(!guidance.dtc_notes.is_empty());
-    // Community content must self-describe as unverified in its conditions.
-    for adj in &guidance.adjustments {
-        for over in &adj.channel_overrides {
-            assert!(
-                over.condition.contains("unverified"),
-                "community condition must self-describe: {}",
-                over.condition
-            );
-        }
+    // Every shipped community claim must carry a named https source
+    // (validate() enforces this; assert it here too so the policy is
+    // visible in the test, not just the validator).
+    for note in &guidance.procedure_notes {
+        assert!(!note.source.trim().is_empty() && note.source_url.starts_with("https://"));
+    }
+    for note in &guidance.dtc_notes {
+        assert!(!note.source.trim().is_empty() && note.source_url.starts_with("https://"));
     }
 }

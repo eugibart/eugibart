@@ -32,6 +32,43 @@ maps each brand/model/year range to its `definitions/*.toml` id (or to a
 cross-validated against the real definitions in CI. It's the data source
 behind the "tell me about your bike" wizard on the Connect screen.
 
+## Ducati model coverage (explicit, not implied)
+
+Researched against the TuneBoy/DynoDom Marelli applications list
+(tuneboy.com.au/ducati_marelli), the ducati.ms model/ECU thread, ECU
+repair-shop listings (carmo-electronics, ecurepair.com.au), and bikeboy.org.
+Note "59M" and "5.9M" are the **same ECU** (Marelli's dotted/undotted
+notation). An earlier version of this repo mis-mapped several models — the
+corrections are called out because pretending otherwise risks a false
+"it connected" on the wrong protocol generation:
+
+| Model | ECU | Status |
+| --- | --- | --- |
+| Monster 620 (2005-06) / 695 / 696 (2008-10) / 1000 (2005-06) / 1100 (2009-10) | Marelli IAW 5AM | Covered by `definitions/ducati/iaw-5am.toml` (unverified) |
+| Monster S2R 800/1000, S4RS, S4R (2006-08 Testastretta) | Marelli IAW 5AM | Covered (unverified); early S4R (2003-05) is 5.9M — check the ECU label |
+| Multistrada 620 / 1100, Hypermotard 1100 (2007-09) | Marelli IAW 5AM | Covered (unverified) |
+| SportClassic GT1000 / Sport 1000 / PaulSmart | Marelli IAW 5AM | Covered (unverified) |
+| 998, 996R (2001), 749/999 (2003-06), ST4S, Monster S4, SS 800/1000 DS | Marelli IAW 59M (5.9M) | Covered by `definitions/ducati/iaw-59m.toml` (unverified) |
+| **748 / 916 / 996** | Weber-Marelli **P8 / 1.6M / 16M** | **Known gap — previously mis-mapped to the 59M here; corrected.** Different ECU generation entirely |
+| ST2, SS 900/750 i.e., MH900e | 1.6M / 1.5M / 15M | Known gap |
+| Monster 900 i.e. | conflicting sources (1.5M vs 5.9M by year) | Honest "check your ECU label" gap entry |
+| **Hypermotard 796**, Monster 796, 696 (2011+), 1100 EVO, Hypermotard 1100 EVO | **Siemens/Continental M3C** | **Known gap — the 796 was previously mis-mapped to the 5AM; corrected** |
+| 848 / 1098 / 1198, Multistrada 1200+ | Marelli on CAN-bus / Siemens | Different transport, out of scope for the K-line definitions |
+
+## EPROM vs flash: two tuning cultures, two ECU generations
+
+Community guidance constantly references "chips" (Ultimap, FIM, dealer
+EPROMs with multi-position trimmers). That culture belongs to the **older
+socketed-EPROM ECUs** — Ducati P8/1.6M/16M (748/916/996, ST2), MV's 1.6M —
+which MotoDiag does **not** currently support. The generations we do cover
+(MV 5SM, Ducati 5AM and 5.9M) are **software-mapped**: no socketed chip, no
+physical CO trimmer; tuning is a reflash (Nemesis, TuneBoy) or a dedicated
+replacement ECU (MV Corse "Kit" ECU, Ducati Termignoni "RACE" kit ECU), and
+CO/TPS adjustments happen through diagnostics. Guidance copy in the
+definitions and mods.toml is written per-generation so a 5SM owner is never
+told to turn a trimmer that doesn't exist (sources: mvfaq.blogspot.com,
+ducati.ms, ducatimonster.org — cited inline on each entry).
+
 ## Physical layer
 
 - K-line: single wire, bidirectional, 10.4 kbaud, 8N1, idle high (pulled to

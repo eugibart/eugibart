@@ -63,6 +63,8 @@ export default function LoggingScreen({ activeProfile }: { activeProfile: BikePr
               condition: s.condition,
               source: s.source,
               label: s.label,
+              citation_site: s.citationSite,
+              citation_url: s.citationUrl,
             })),
           };
         }

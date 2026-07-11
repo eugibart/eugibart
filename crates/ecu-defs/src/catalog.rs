@@ -129,6 +129,11 @@ pub struct ChannelOverride {
     /// Plain-language rationale shown alongside the range.
     #[serde(default)]
     pub note: Option<String>,
+    /// Where this claim comes from — site name shown in the UI ("mvagusta.net").
+    /// REQUIRED: an unsourced community claim cannot ship (see validate()).
+    pub source: String,
+    /// The specific page/thread backing the claim. Must be https.
+    pub source_url: String,
 }
 
 /// Extra step/caveat woven into a service routine's procedure for matching
@@ -141,6 +146,10 @@ pub struct ProcedureNote {
     pub routine: String,
     pub requires: ModRequires,
     pub note: String,
+    /// Site name shown in the UI. REQUIRED — see ChannelOverride::source.
+    pub source: String,
+    /// Must be https.
+    pub source_url: String,
 }
 
 /// Extra likely-cause/check for a DTC when the bike's mods make it probable.
@@ -154,6 +163,24 @@ pub struct DtcNote {
     pub requires: ModRequires,
     pub cause: String,
     pub check: String,
+    /// Site name shown in the UI. REQUIRED — see ChannelOverride::source.
+    pub source: String,
+    /// Must be https.
+    pub source_url: String,
+}
+
+/// A community claim without provenance is a rumor. Every guidance entry
+/// must say where it came from, and the link must be a real https URL.
+fn validate_source(source: &str, source_url: &str) -> std::result::Result<(), String> {
+    if source.trim().is_empty() {
+        return Err("empty source — every community claim needs a named source".into());
+    }
+    if !source_url.starts_with("https://") {
+        return Err(format!(
+            "source_url \"{source_url}\" must be an https:// URL"
+        ));
+    }
+    Ok(())
 }
 
 impl BikeCatalog {
@@ -251,6 +278,8 @@ impl ModGuidance {
                         ),
                     ));
                 }
+                validate_source(&over.source, &over.source_url)
+                    .map_err(|reason| invalid(&adj.definition_id, reason))?;
             }
         }
 
@@ -271,6 +300,8 @@ impl ModGuidance {
                     format!("procedure note for \"{}\" is empty", note.routine),
                 ));
             }
+            validate_source(&note.source, &note.source_url)
+                .map_err(|reason| invalid(&note.definition_id, reason))?;
         }
 
         for note in &self.dtc_notes {
@@ -284,6 +315,8 @@ impl ModGuidance {
                     ),
                 ));
             }
+            validate_source(&note.source, &note.source_url)
+                .map_err(|reason| invalid(&note.definition_id, reason))?;
         }
 
         Ok(())
@@ -435,11 +468,15 @@ mod tests {
         max = 1400.0
         condition = "warm idle, open exhaust on stock EPROM — community reference, unverified"
         note = "Open pipes on the stock map tend to idle slightly high."
+        source = "mvagusta.net"
+        source_url = "https://www.mvagusta.net/threads/example.1/"
 
         [[procedure_notes]]
         definition_id = "test-ecu"
         routine = "co_trim"
         note = "With an open exhaust the stock CO target reads lean at the silencer."
+        source = "mvagusta.net"
+        source_url = "https://www.mvagusta.net/threads/example.2/"
         [procedure_notes.requires]
         exhaust = ["slip-on-open", "full-system"]
 
@@ -448,6 +485,8 @@ mod tests {
         code = 0x0171
         cause = "Lean mixture from an open exhaust on the stock EPROM map"
         check = "Expected with open pipes on the stock map; a dedicated EPROM resolves it"
+        source = "mvagusta.net"
+        source_url = "https://www.mvagusta.net/threads/example.3/"
         [dtc_notes.requires]
         exhaust = ["slip-on-open", "full-system"]
         eprom = ["stock"]
@@ -461,6 +500,34 @@ mod tests {
         assert_eq!(guidance.adjustments.len(), 1);
         assert_eq!(guidance.procedure_notes.len(), 1);
         assert_eq!(guidance.dtc_notes.len(), 1);
+    }
+
+    #[test]
+    fn guidance_requires_sources_structurally() {
+        // Omitting source entirely fails at PARSE time (required field).
+        assert!(ModGuidance::from_toml(
+            &valid_guidance_toml().replace("source = \"mvagusta.net\"\n", ""),
+            "test",
+        )
+        .is_err());
+
+        // An empty source name fails validation.
+        let guidance = ModGuidance::from_toml(
+            &valid_guidance_toml().replace("source = \"mvagusta.net\"", "source = \"  \""),
+            "test",
+        )
+        .expect("parses");
+        let err = guidance.validate(&registry()).unwrap_err().to_string();
+        assert!(err.contains("empty source"), "{err}");
+
+        // A non-https URL fails validation.
+        let guidance = ModGuidance::from_toml(
+            &valid_guidance_toml().replace("https://www.mvagusta.net", "http://www.mvagusta.net"),
+            "test",
+        )
+        .expect("parses");
+        let err = guidance.validate(&registry()).unwrap_err().to_string();
+        assert!(err.contains("https"), "{err}");
     }
 
     #[test]
