@@ -22,6 +22,11 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   DTCs with guidance, live data) for pre-purchase inspections or sending to
   a mechanic
 - Log live data to CSV; capture every session as a replayable wire trace
+- **Sync Assistant (vacuometro)** — reads an open-hardware digital vacuum
+  gauge (~€50 DIY build, firmware included) on a second USB port and shows
+  per-cylinder vacuum, spread, and live ECU RPM on one screen for
+  throttle-body sync — the mandatory step before CO adjustment. See
+  [docs/VACUOMETRO.md](docs/VACUOMETRO.md)
 - Service functions (actuator tests, TPS reset, CO trim) behind hard safety
   interlocks — **ECU map read/write is deliberately out of scope**
 

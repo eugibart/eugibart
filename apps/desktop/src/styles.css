@@ -331,3 +331,49 @@ select, input {
 .dtc-items li { margin-bottom: 3px; }
 
 .section-gap { margin-top: 28px; }
+
+.panel-wide { max-width: 960px; }
+
+.sync-topline {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 16px;
+}
+.sync-rpm { font-size: 20px; font-weight: 700; color: var(--accent); }
+
+.sync-spread {
+  display: inline-block;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 14px;
+}
+.sync-good { background: #16301f; border: 1px solid var(--ok); }
+.sync-ok { background: #33270f; border: 1px solid var(--warn); }
+.sync-bad { background: #3d1a18; border: 1px solid var(--danger); }
+
+.sync-bars {
+  display: flex;
+  gap: 26px;
+  align-items: flex-end;
+  padding: 10px 6px 4px;
+}
+.sync-cyl { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.sync-bar-track {
+  width: 54px;
+  height: 220px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column-reverse;
+  overflow: hidden;
+}
+.sync-bar-fill {
+  background: linear-gradient(180deg, #e0342b, #8c1f19);
+  transition: height 0.25s ease;
+}
+.sync-kpa { font-size: 16px; font-weight: 600; }
+.sync-delta { font-size: 12px; color: var(--text-muted); }
+.sync-label { font-size: 13px; color: var(--text-muted); }

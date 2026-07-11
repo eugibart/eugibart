@@ -18,6 +18,9 @@ tracing.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 csv.workspace = true
+# For the vacuum-gauge serial reader (vacuum.rs); K-line serial I/O itself
+# stays behind motodiag-transport's own serialport usage.
+serialport.workspace = true
 
 [[bin]]
 name = "motodiag-discover"

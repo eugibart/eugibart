@@ -22,6 +22,10 @@ fn main() {
             commands::stop_csv_log,
             commands::troubleshoot_connection,
             commands::export_health_report,
+            commands::connect_vacuum,
+            commands::vacuum_status,
+            commands::poll_vacuum,
+            commands::disconnect_vacuum,
         ])
         .run(tauri::generate_context!())
         .expect("error while running MotoDiag");

@@ -61,6 +61,19 @@ export interface TroubleshootStep {
   suggestion: string | null;
 }
 
+export interface VacuumInfo {
+  port: string;
+  channels: number;
+  simulated: boolean;
+}
+
+export interface VacuumStatus {
+  channels_kpa: number[];
+  spread_kpa: number;
+  deltas_kpa: number[];
+  timestamp_ms: number;
+}
+
 export const SIMULATOR_PORT = "simulator";
 
 export const api = {
@@ -81,4 +94,8 @@ export const api = {
   troubleshootConnection: (definitionId: string, port: string) =>
     invoke<TroubleshootStep[]>("troubleshoot_connection", { definitionId, port }),
   exportHealthReport: () => invoke<string>("export_health_report"),
+  connectVacuum: (port: string) => invoke<VacuumInfo>("connect_vacuum", { port }),
+  vacuumStatus: () => invoke<VacuumInfo | null>("vacuum_status"),
+  pollVacuum: () => invoke<VacuumStatus>("poll_vacuum"),
+  disconnectVacuum: () => invoke<void>("disconnect_vacuum"),
 };

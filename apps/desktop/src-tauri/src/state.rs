@@ -7,6 +7,7 @@
 use std::sync::Mutex;
 
 use motodiag_app_core::logging::CsvLogger;
+use motodiag_app_core::vacuum::VacuumGauge;
 use motodiag_app_core::DiagSession;
 use motodiag_ecu_defs::Registry;
 
@@ -17,9 +18,18 @@ pub struct Connection {
     pub csv_log: Option<(String, CsvLogger)>,
 }
 
+/// A connected vacuum gauge (Sync Assistant). Deliberately independent of
+/// [`Connection`]: the gauge is a second physical device on its own port and
+/// can be used with or without an ECU session.
+pub struct VacuumConnection {
+    pub port: String,
+    pub gauge: Box<dyn VacuumGauge>,
+}
+
 #[derive(Default)]
 pub struct AppState {
     pub connection: Mutex<Option<Connection>>,
+    pub vacuum: Mutex<Option<VacuumConnection>>,
 }
 
 const EMBEDDED_DEFINITIONS: &[(&str, &str)] = &[

@@ -4,15 +4,18 @@ import ConnectScreen from "./screens/ConnectScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import DtcScreen from "./screens/DtcScreen";
 import ServiceScreen from "./screens/ServiceScreen";
+import SyncScreen from "./screens/SyncScreen";
 import LoggingScreen from "./screens/LoggingScreen";
 
-type Tab = "connect" | "dashboard" | "dtcs" | "service" | "logging";
+type Tab = "connect" | "dashboard" | "dtcs" | "service" | "sync" | "logging";
 
 const TABS: { id: Tab; label: string; needsConnection: boolean }[] = [
   { id: "connect", label: "Connect", needsConnection: false },
   { id: "dashboard", label: "Dashboard", needsConnection: true },
   { id: "dtcs", label: "Fault codes", needsConnection: true },
   { id: "service", label: "Service", needsConnection: true },
+  // The vacuum gauge is its own device — usable without an ECU session.
+  { id: "sync", label: "Sync", needsConnection: false },
   { id: "logging", label: "Logging", needsConnection: true },
 ];
 
@@ -94,6 +97,7 @@ export default function App() {
         {tab === "service" && connection && (
           <ServiceScreen connection={connection} onStatusChange={refreshStatus} />
         )}
+        {tab === "sync" && <SyncScreen ecuConnected={connection !== null} />}
         {tab === "logging" && connection && <LoggingScreen />}
       </main>
     </div>

@@ -12,6 +12,7 @@ pub mod report;
 pub mod safety;
 pub mod session;
 pub mod troubleshoot;
+pub mod vacuum;
 
 pub use session::{ConnectOptions, DiagSession, EcuIdentity};
 

@@ -50,6 +50,13 @@ Lets you validate timing and sniff other tools without touching the bike:
 - Cheap 8-channel logic analyzer (Saleae-clone, ~€15) — verify fast-init
   pulse widths from macOS, capture JPDiag traffic for protocol discovery.
 
+### 4. Optional: digital vacuum gauge for throttle-body sync (~€50)
+
+For the Sync screen: an Arduino + ADS1115 + 4× MPX4250AP MAP sensors on a
+second USB port, streaming per-cylinder vacuum next to live ECU data. Full
+parts list, wiring, and firmware in [VACUOMETRO.md](VACUOMETRO.md) and
+`tools/vacuum-gauge-firmware/`.
+
 ## Later — CAN-era Ducatis (milestone M5)
 
 - **OBDLink SX/EX** (STN11xx serial AT command set): proven with Ducati DDA

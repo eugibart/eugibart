@@ -14,7 +14,7 @@ use motodiag_kwp2000::init::FastInitConfig;
 use motodiag_transport::{mock, KLineTransport};
 use tauri::State;
 
-use crate::state::{load_registry, AppState, Connection};
+use crate::state::{load_registry, AppState, Connection, VacuumConnection};
 
 /// Sentinel "port" that connects to the in-process simulated ECU.
 pub const SIMULATOR_PORT: &str = "simulator";
@@ -347,6 +347,103 @@ pub async fn export_health_report(state: State<'_, AppState>) -> Result<String, 
         std::fs::write(&path, html).map_err(|e| e.to_string())?;
         Ok(path.display().to_string())
     })
+}
+
+#[derive(serde::Serialize)]
+pub struct VacuumInfo {
+    pub port: String,
+    pub channels: usize,
+    pub simulated: bool,
+}
+
+#[derive(serde::Serialize)]
+pub struct VacuumStatus {
+    pub channels_kpa: Vec<f64>,
+    /// Max−min across cylinders — drive this toward zero while balancing.
+    pub spread_kpa: f64,
+    /// Per-cylinder difference vs cylinder 1.
+    pub deltas_kpa: Vec<f64>,
+    pub timestamp_ms: u64,
+}
+
+/// Connect a vacuum gauge (Sync Assistant). Independent of the ECU session —
+/// its own port, its own lifecycle.
+#[tauri::command]
+pub async fn connect_vacuum(
+    state: State<'_, AppState>,
+    port: String,
+) -> Result<VacuumInfo, String> {
+    use motodiag_app_core::vacuum::{MockVacuumGauge, SerialVacuumGauge, VacuumGauge};
+
+    let simulated = port == SIMULATOR_PORT;
+    let mut gauge: Box<dyn VacuumGauge> = if simulated {
+        Box::new(MockVacuumGauge::default())
+    } else {
+        Box::new(SerialVacuumGauge::open(&port).map_err(|e| format!("failed to open {port}: {e}"))?)
+    };
+
+    // Confirm we're actually receiving samples before declaring success.
+    let first = gauge
+        .read(Duration::from_millis(1500))
+        .map_err(|e| format!("no vacuum samples arriving on {port}: {e}"))?;
+
+    let info = VacuumInfo {
+        port: port.clone(),
+        channels: first.channels_kpa.len(),
+        simulated,
+    };
+    *state.vacuum.lock().unwrap() = Some(VacuumConnection { port, gauge });
+    Ok(info)
+}
+
+#[tauri::command]
+pub async fn vacuum_status(state: State<'_, AppState>) -> Result<Option<VacuumInfo>, String> {
+    let guard = state.vacuum.lock().unwrap();
+    Ok(guard.as_ref().map(|v| VacuumInfo {
+        port: v.port.clone(),
+        channels: 0, // unknown between reads; the UI uses poll data anyway
+        simulated: v.port == SIMULATOR_PORT,
+    }))
+}
+
+#[tauri::command]
+pub async fn poll_vacuum(state: State<'_, AppState>) -> Result<VacuumStatus, String> {
+    let reading = {
+        let mut guard = state.vacuum.lock().unwrap();
+        let vac = guard.as_mut().ok_or("no vacuum gauge connected")?;
+        vac.gauge
+            .read(Duration::from_millis(500))
+            .map_err(|e| e.to_string())?
+    };
+
+    // If a CSV log is running on the ECU session, vacuum flows into it too —
+    // one timeline for everything.
+    if let Some(conn) = state.connection.lock().unwrap().as_mut() {
+        if let Some((_, logger)) = conn.csv_log.as_mut() {
+            for (i, kpa) in reading.channels_kpa.iter().enumerate() {
+                let _ = logger.log(&Reading {
+                    key: format!("vac{}", i + 1),
+                    name: format!("Vacuum cyl {}", i + 1),
+                    unit: "kPa".into(),
+                    value: *kpa,
+                    timestamp_ms: reading.timestamp_ms,
+                });
+            }
+        }
+    }
+
+    Ok(VacuumStatus {
+        spread_kpa: reading.spread_kpa(),
+        deltas_kpa: reading.deltas_vs_reference(0),
+        channels_kpa: reading.channels_kpa,
+        timestamp_ms: reading.timestamp_ms,
+    })
+}
+
+#[tauri::command]
+pub async fn disconnect_vacuum(state: State<'_, AppState>) -> Result<(), String> {
+    *state.vacuum.lock().unwrap() = None;
+    Ok(())
 }
 
 #[derive(serde::Serialize)]

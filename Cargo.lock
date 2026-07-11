@@ -127,6 +127,7 @@ dependencies = [
  "motodiag-transport",
  "serde",
  "serde_json",
+ "serialport",
  "thiserror",
  "tracing",
 ]
