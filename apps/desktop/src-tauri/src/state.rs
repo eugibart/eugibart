@@ -51,12 +51,18 @@ const EMBEDDED_DEFINITIONS: &[(&str, &str)] = &[
     ),
 ];
 
-pub fn load_registry() -> Registry {
-    let mut registry = Registry::default();
-    for (origin, text) in EMBEDDED_DEFINITIONS {
+/// The embedded definitions, parsed once per process. Commands call this on
+/// every invocation (port lists, connects, troubleshooting), so re-parsing
+/// five TOML documents each time was pure waste.
+pub fn load_registry() -> &'static Registry {
+    static REGISTRY: std::sync::OnceLock<Registry> = std::sync::OnceLock::new();
+    REGISTRY.get_or_init(|| {
+        let mut registry = Registry::default();
+        for (origin, text) in EMBEDDED_DEFINITIONS {
+            registry
+                .add_toml(text, origin)
+                .expect("embedded ECU definitions are validated by the workspace tests");
+        }
         registry
-            .add_toml(text, origin)
-            .expect("embedded ECU definitions are validated by the workspace tests");
-    }
-    registry
+    })
 }

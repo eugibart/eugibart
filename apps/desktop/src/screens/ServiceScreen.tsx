@@ -48,6 +48,15 @@ export default function ServiceScreen({
 
   const confirming = routines.find((r) => r.key === confirmKey);
 
+  useEffect(() => {
+    if (!confirmKey) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmKey(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [confirmKey]);
+
   return (
     <div className="panel">
       <h2>Service functions</h2>

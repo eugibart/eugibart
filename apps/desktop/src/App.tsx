@@ -35,6 +35,20 @@ export default function App() {
     refreshStatus();
   }, [refreshStatus]);
 
+  // Keyboard shortcuts: 1-6 switch tabs (skipped while typing in a field).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && ["INPUT", "SELECT", "TEXTAREA"].includes(target.tagName)) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const index = Number.parseInt(e.key, 10) - 1;
+      const t = TABS[index];
+      if (t && !(t.needsConnection && !connection)) setTab(t.id);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [connection]);
+
   const handleConnected = (info: ConnectionInfo) => {
     setConnection(info);
     setTab("dashboard");
@@ -77,15 +91,18 @@ export default function App() {
         </div>
       </header>
 
-      <nav className="tabs">
-        {TABS.map((t) => (
+      <nav className="tabs" aria-label="Main navigation">
+        {TABS.map((t, i) => (
           <button
             key={t.id}
             className={`tab ${tab === t.id ? "tab-active" : ""}`}
             disabled={t.needsConnection && !connection}
             onClick={() => setTab(t.id)}
+            aria-current={tab === t.id ? "page" : undefined}
+            title={t.needsConnection && !connection ? "Connect to a bike first" : `Shortcut: ${i + 1}`}
           >
             {t.label}
+            <span className="tab-key" aria-hidden="true">{i + 1}</span>
           </button>
         ))}
       </nav>

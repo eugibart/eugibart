@@ -34,3 +34,11 @@ csv = "1"
 # default-features off: skip libudev so the workspace builds in bare containers/CI.
 # Port enumeration still works via sysfs/IOKit; the desktop app re-enables it.
 serialport = { version = "4.7", default-features = false }
+
+# Shipping profile: smaller, faster binaries. Thin LTO + single codegen unit is
+# the sweet spot for this codebase size; strip keeps distributables lean.
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"

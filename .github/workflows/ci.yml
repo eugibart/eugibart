@@ -56,3 +56,21 @@ jobs:
       - name: Check Tauri backend
         working-directory: apps/desktop/src-tauri
         run: cargo check
+
+  audit:
+    name: Dependency audits (RustSec + npm)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: cargo audit (protocol workspace + desktop lockfiles)
+        run: |
+          cargo install cargo-audit --locked
+          cargo audit
+          cargo audit --file apps/desktop/src-tauri/Cargo.lock
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: npm audit (production dependencies)
+        working-directory: apps/desktop
+        run: npm audit --omit=dev --audit-level=high
