@@ -53,7 +53,7 @@ touches one of these behaviours, re-check the criterion it implements.
   selects, and inputs.
 - **2.1.2 No keyboard trap** — No focus traps; confirmation boxes are inline
   content (not modal) and Escape additionally cancels them.
-- **2.1.4 Character key shortcuts** — The 1–6 tab shortcuts can be **turned
+- **2.1.4 Character key shortcuts** — The 1–7 tab shortcuts can be **turned
   off** with the "Shortcuts: on/off" toggle in the top bar (`aria-pressed`,
   persisted in `localStorage`). They are also suppressed while typing in any
   field and when a modifier key is held.
@@ -67,7 +67,10 @@ touches one of these behaviours, re-check the criterion it implements.
   re-orders with CSS. The bike wizard moves focus to each new step's heading
   (`<h3 tabIndex={-1}>`) when the step changes, so a screen-reader user gets
   "Step 2 of 3 — Stock or modified?" announced without hunting for it — the
-  same pattern used for step 1/2/3.
+  same pattern used for step 1/2/3. The Help screen's table of contents uses
+  same-page anchors whose target headings carry `tabIndex={-1}`, so a jump
+  moves keyboard/screen-reader focus to the section, not just the scroll
+  position.
 - **2.4.7 / 2.4.11 Focus visible, not obscured** — A global
   `:focus-visible` outline (2 px, offset, ≥3:1) applies to every interactive
   element; no sticky/overlay content can cover a focused element.
@@ -111,14 +114,17 @@ touches one of these behaviours, re-check the criterion it implements.
 
 - **Automated**: axe-core (rule tags `wcag2a`, `wcag2aa`, `wcag21a`,
   `wcag21aa`, `wcag22aa`) run via Playwright against every app state, **in
-  each theme** (38 audited states total): the base walkthrough — connect
+  each theme** (54 audited states total): the base walkthrough — connect
   (empty garage), connect+troubleshooter, Advanced expanded, dashboard (live
   and paused), fault codes, service (read-only and confirm), sync with gauge
-  connected, and logging — plus the garage/wizard walkthrough — a
-  garage-populated connect screen, all three wizard steps (including the
-  "we don't have this bike yet" gap-note state), a dashboard showing a
-  community-adjusted range with the overrides editor open, and a fault-code
-  card / service routine carrying a mods-based note. **0 violations.**
+  connected, logging, and the Help guide (top and mid-anchor-jump) — plus
+  the garage/wizard walkthrough — a garage-populated connect screen, all
+  three wizard steps (including the "we don't have this bike yet" gap-note
+  state), a dashboard showing a community-adjusted range with the overrides
+  editor open, a fault-code card / service routine carrying a mods-based
+  note, the guided charging test (intro, mid-step, verdict), snapshot-saved
+  and before/after-compare states, and the wire-trace report.
+  **0 violations.**
   This pass caught a real defect the hand-computed pass missed: badge text
   sat on a semi-transparent status *tint*, which lightens the effective
   background, dropping ok/danger badge text below 4.5:1 — fixed with the

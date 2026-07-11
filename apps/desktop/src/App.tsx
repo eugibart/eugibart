@@ -7,8 +7,9 @@ import DtcScreen from "./screens/DtcScreen";
 import ServiceScreen from "./screens/ServiceScreen";
 import SyncScreen from "./screens/SyncScreen";
 import LoggingScreen from "./screens/LoggingScreen";
+import HelpScreen from "./screens/HelpScreen";
 
-type Tab = "connect" | "dashboard" | "dtcs" | "service" | "sync" | "logging";
+type Tab = "connect" | "dashboard" | "dtcs" | "service" | "sync" | "logging" | "help";
 
 const TABS: { id: Tab; label: string; needsConnection: boolean }[] = [
   { id: "connect", label: "Connect", needsConnection: false },
@@ -18,6 +19,7 @@ const TABS: { id: Tab; label: string; needsConnection: boolean }[] = [
   // The vacuum gauge is its own device — usable without an ECU session.
   { id: "sync", label: "Sync", needsConnection: false },
   { id: "logging", label: "Logging", needsConnection: true },
+  { id: "help", label: "Help", needsConnection: false },
 ];
 
 const SHORTCUTS_KEY = "motodiag-shortcuts";
@@ -78,7 +80,7 @@ export default function App() {
     refreshStatus();
   }, [refreshStatus]);
 
-  // Keyboard shortcuts: 1-6 switch tabs (skipped while typing in a field,
+  // Keyboard shortcuts: 1-7 switch tabs (skipped while typing in a field,
   // and entirely inert when the user has turned shortcuts off).
   useEffect(() => {
     if (!shortcuts) return;
@@ -153,7 +155,7 @@ export default function App() {
             className="btn btn-small"
             onClick={toggleShortcuts}
             aria-pressed={shortcuts}
-            title="Number keys 1-6 switch tabs. Turn off if they conflict with your assistive technology."
+            title="Number keys 1-7 switch tabs. Turn off if they conflict with your assistive technology."
           >
             Shortcuts: {shortcuts ? "on" : "off"}
           </button>
@@ -207,6 +209,7 @@ export default function App() {
         {tab === "logging" && connection && (
           <LoggingScreen activeProfile={activeProfile} />
         )}
+        {tab === "help" && <HelpScreen />}
       </main>
     </div>
   );
