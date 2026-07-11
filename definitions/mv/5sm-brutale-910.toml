@@ -1,25 +1,39 @@
-# MV Agusta Brutale 910 — Magneti Marelli IAW 5SM
+# MV Agusta — Magneti Marelli IAW 5SM (shared across the pre-Euro3 F4/Brutale range)
 #
 # STATUS: UNVERIFIED SCAFFOLD. The bus type, init method, and baud rate follow
 # well-documented Marelli IAW practice (JPDiag/GuzziDiag family), but the
 # addresses, local identifiers, scalings, and routine byte sequences below are
 # educated placeholders. Each carries `verified = false` until it has been
-# confirmed against a real Brutale 910 — by sniffing JPDiag with a serial tap
-# and by direct probing (milestones M1/M4). Do not trust a value until its
-# flag flips.
+# confirmed against a real bike — by sniffing JPDiag with a serial tap and by
+# direct probing (milestones M1/M4). Do not trust a value until its flag flips.
+#
+# MODEL COVERAGE — the IAW 5SM is fitted across the whole first-generation
+# F4/Brutale range once they moved off the earlier 1.6M ECU, so one definition
+# genuinely covers all of them (confirmed via ECU-repair/tuning listings, not
+# assumed): Brutale 750, 910/910R, 989 R, 1078 RR, and F4 750 (2003+)/1000/1000R.
+# See docs/PROTOCOL.md for the full MV model-coverage table, including what
+# this file does *not* cover.
 
 [ecu]
 id = "mv-5sm-brutale-910"
-name = "Marelli IAW 5SM (Brutale 910)"
+name = "Marelli IAW 5SM (F4/Brutale range)"
 manufacturer = "MV Agusta"
-models = ["Brutale 910 (2005-2008)", "Brutale 910R"]
+models = [
+    "Brutale 750 (2003-2007)",
+    "Brutale 910/910R/910S (2005-2008)",
+    "Brutale 989 R",
+    "Brutale 1078 RR",
+    "F4 750 (2003+, 5SM ECU)",
+    "F4 1000/1000R",
+]
 bus = "k-line"
 verified = false
 notes = """
 Diagnostic connector: 3-pin (K-line, +12V, GND) reported under the tank on the
 right side; some bikes may use the 4-pin connector under the seat instead.
 Verify against the workshop manual wiring diagram before first connection —
-see docs/MV-PINOUT.md.
+see docs/MV-PINOUT.md. Connector location/wiring may vary by model year —
+confirm per bike, don't assume the Brutale 910's layout applies unchanged.
 """
 
 [init]
@@ -49,6 +63,14 @@ offset = 2
 length = 2
 scale = 0.25
 verified = false
+# Typical inline-4/triple sportbike warm idle target; NOT taken from an MV
+# workshop manual — a starting point to sanity-check against, not a fact.
+# Confirm the real spec per model (displacement affects idle target) before
+# relying on this range for anything.
+[channels.spec]
+min = 1100.0
+max = 1300.0
+condition = "warm idle, neutral, unverified — confirm per model"
 
 [[channels]]
 key = "tps"
@@ -59,6 +81,10 @@ offset = 2
 length = 2
 scale = 0.0015259  # 100 / 65535
 verified = false
+[channels.spec]
+min = 0.0
+max = 3.0
+condition = "throttle fully closed, key on engine off, unverified"
 
 [[channels]]
 key = "ect"
@@ -70,6 +96,10 @@ length = 1
 scale = 1.0
 offset_value = -40.0
 verified = false
+[channels.spec]
+min = 80.0
+max = 105.0
+condition = "engine at operating temperature, thermostat open, unverified"
 
 [[channels]]
 key = "iat"
@@ -91,6 +121,10 @@ offset = 2
 length = 1
 scale = 0.0625
 verified = false
+[channels.spec]
+min = 13.0
+max = 14.8
+condition = "engine running above idle, healthy charging system, unverified"
 
 [[channels]]
 key = "map"
@@ -151,6 +185,13 @@ checks = [
 key = "tps_reset"
 name = "Throttle position (TPS) reset"
 description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
+procedure = [
+    "Warm the engine to operating temperature, then switch it off (key on, engine off for the reset itself)",
+    "Confirm the throttle is fully closed and the cable has correct freeplay — do not touch the throttle during the reset",
+    "Run this routine and wait for the ECU to confirm completion",
+    "Key off, then back on; verify the TPS live-data reading sits within its closed-throttle spec (see the tps channel)",
+    "If sync work (vacuometro) is planned, do it before this reset, not after — TPS reset assumes balanced throttle bodies",
+]
 risk = "medium"
 request = [0x31, 0x01]
 verified = false
@@ -186,6 +227,13 @@ min_battery_v = 11.5
 key = "co_trim"
 name = "CO trim adjustment"
 description = "Adjust idle CO trim. Persisted by the ECU — follow the workshop procedure."
+procedure = [
+    "Sync the throttle bodies FIRST (Sync tab, vacuometro) — CO trim on unbalanced bodies chases a moving target",
+    "Warm the engine fully; idle should already be within its RPM spec (see the rpm channel) before touching CO",
+    "Connect an exhaust gas analyzer if available — this routine adjusts ECU trim, it does not measure exhaust CO itself",
+    "Run this routine in small increments, re-checking idle RPM and analyzer reading between each",
+    "Re-verify sync hasn't drifted after the adjustment; recheck fault codes afterward",
+]
 risk = "high"
 request = [0x31, 0x02]
 verified = false

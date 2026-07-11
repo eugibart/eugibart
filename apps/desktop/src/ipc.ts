@@ -1,17 +1,26 @@
 // Typed wrappers around the Tauri commands.
 import { invoke } from "@tauri-apps/api/core";
 
+export interface ChannelSpecInfo {
+  min: number | null;
+  max: number | null;
+  target: number | null;
+  condition: string;
+}
+
 export interface ChannelInfo {
   key: string;
   name: string;
   unit: string;
   verified: boolean;
+  spec: ChannelSpecInfo | null;
 }
 
 export interface RoutineInfo {
   key: string;
   name: string;
   description: string;
+  procedure: string[];
   risk: "low" | "medium" | "high";
   verified: boolean;
   preconditions: string[];

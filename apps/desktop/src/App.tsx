@@ -92,7 +92,7 @@ export default function App() {
 
       <main className="content">
         {tab === "connect" && <ConnectScreen onConnected={handleConnected} />}
-        {tab === "dashboard" && connection && <DashboardScreen />}
+        {tab === "dashboard" && connection && <DashboardScreen connection={connection} />}
         {tab === "dtcs" && connection && <DtcScreen serviceMode={connection.service_mode} />}
         {tab === "service" && connection && (
           <ServiceScreen connection={connection} onStatusChange={refreshStatus} />

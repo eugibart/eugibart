@@ -78,11 +78,24 @@ export default function ServiceScreen({
             </div>
             {r.description && <p className="muted small">{r.description}</p>}
             {r.preconditions.length > 0 && (
-              <ul className="pre-list">
-                {r.preconditions.map((p, i) => (
-                  <li key={i}>{p}</li>
-                ))}
-              </ul>
+              <>
+                <span className="routine-subhead">Preconditions</span>
+                <ul className="pre-list">
+                  {r.preconditions.map((p, i) => (
+                    <li key={i}>{p}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {r.procedure.length > 0 && (
+              <>
+                <span className="routine-subhead">Procedure</span>
+                <ol className="pre-list">
+                  {r.procedure.map((step, i) => (
+                    <li key={i}>{step}</li>
+                  ))}
+                </ol>
+              </>
             )}
             <button
               className="btn"

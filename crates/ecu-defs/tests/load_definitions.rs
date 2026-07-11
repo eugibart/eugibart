@@ -29,6 +29,31 @@ fn shipped_definitions_load_and_validate() {
         brutale.can.is_none(),
         "K-line ECU must not have a can config"
     );
+    // Shared across the whole pre-Euro3 5SM range, not just the 910.
+    assert!(brutale.ecu.models.iter().any(|m| m.contains("750")));
+    assert!(brutale.ecu.models.iter().any(|m| m.contains("1078")));
+    assert!(brutale.ecu.models.iter().any(|m| m.contains("F4")));
+    let rpm = brutale
+        .channels
+        .iter()
+        .find(|c| c.key == "rpm")
+        .expect("rpm channel");
+    assert!(rpm.spec.is_some(), "rpm should carry a reference spec");
+    let tps_reset = brutale
+        .routines
+        .iter()
+        .find(|r| r.key == "tps_reset")
+        .unwrap();
+    assert!(
+        !tps_reset.procedure.is_empty(),
+        "tps_reset should have a step-by-step procedure"
+    );
+
+    let f4_312r = registry
+        .get("mv-7bm-f4-312r")
+        .expect("F4 312R (IAW 7BM) stub present");
+    assert_eq!(f4_312r.ecu.manufacturer, "MV Agusta");
+    assert!(!f4_312r.ecu.verified);
 
     let iaw_5am = registry
         .get("ducati-iaw-5am")
@@ -36,6 +61,12 @@ fn shipped_definitions_load_and_validate() {
     assert_eq!(iaw_5am.ecu.manufacturer, "Ducati");
     assert!(!iaw_5am.ecu.models.is_empty());
     assert!(iaw_5am.channels.iter().any(|c| c.key == "rpm"));
+    // Parity: causes/checks must exist here too, not just on the MV file.
+    assert!(iaw_5am
+        .dtc
+        .table
+        .iter()
+        .any(|e| !e.causes.is_empty() && !e.checks.is_empty()));
 
     let iaw_59m = registry
         .get("ducati-iaw-59m")
@@ -44,6 +75,11 @@ fn shipped_definitions_load_and_validate() {
         iaw_59m.init.as_ref().unwrap().method,
         motodiag_ecu_defs::schema::InitMethod::Slow5Baud
     ));
+    assert!(iaw_59m
+        .dtc
+        .table
+        .iter()
+        .any(|e| !e.causes.is_empty() && !e.checks.is_empty()));
 
     let can_stub = registry
         .get("ducati-mc3-multistrada-can")

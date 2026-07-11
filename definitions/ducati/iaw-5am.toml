@@ -39,6 +39,10 @@ offset = 2
 length = 2
 scale = 0.25
 verified = false
+[channels.spec]
+min = 1050.0
+max = 1150.0
+condition = "warm idle, neutral, unverified — Ducati L-twin idle target, confirm per model"
 
 [[channels]]
 key = "tps"
@@ -70,6 +74,10 @@ offset = 2
 length = 1
 scale = 0.0625
 verified = false
+[channels.spec]
+min = 13.0
+max = 14.8
+condition = "engine running above idle, healthy charging system, unverified"
 
 [dtc]
 read_request = [0x18, 0x02, 0xFF, 0x00]
@@ -78,15 +86,42 @@ clear_request = [0x14, 0xFF, 0x00]
 [[dtc.table]]
 code = 0x0115
 description = "Throttle position sensor — signal implausible (placeholder)"
+causes = [
+    "TPS connector corrosion or loose pin",
+    "TPS out of adjustment after throttle body service",
+    "Worn TPS track (high-mileage bikes)",
+    "Damaged wiring between TPS and ECU",
+]
+checks = [
+    "Unplug the TPS connector, inspect for corrosion, clean with contact cleaner",
+    "With key on, watch the TPS live-data channel: sweep the throttle slowly and look for dropouts",
+    "Run the TPS reset routine after any throttle body work",
+]
 
 [[dtc.table]]
 code = 0x0335
 description = "Crankshaft position sensor — no signal (placeholder)"
+causes = [
+    "Crank sensor connector unplugged or corroded",
+    "Sensor-to-flywheel air gap out of spec",
+    "Failed crank position sensor",
+]
+checks = [
+    "Check connector seating and pins at the sensor",
+    "Verify sensor air gap against the workshop manual spec",
+    "Inspect wiring for chafing near the engine cases",
+]
 
 [[routines]]
 key = "tps_reset"
 name = "Throttle position (TPS) reset"
 description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
+procedure = [
+    "Warm the engine to operating temperature, then switch it off (key on, engine off for the reset itself)",
+    "Confirm the throttle is fully closed and the cable has correct freeplay — do not touch the throttle during the reset",
+    "Run this routine and wait for the ECU to confirm completion",
+    "Key off, then back on; verify the TPS live-data reading sits within its closed-throttle spec",
+]
 risk = "medium"
 request = [0x31, 0x01]
 verified = false

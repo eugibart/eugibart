@@ -38,6 +38,10 @@ const EMBEDDED_DEFINITIONS: &[(&str, &str)] = &[
         include_str!("../../../../definitions/mv/5sm-brutale-910.toml"),
     ),
     (
+        "mv/7bm-f4-312r.toml",
+        include_str!("../../../../definitions/mv/7bm-f4-312r.toml"),
+    ),
+    (
         "ducati/iaw-5am.toml",
         include_str!("../../../../definitions/ducati/iaw-5am.toml"),
     ),

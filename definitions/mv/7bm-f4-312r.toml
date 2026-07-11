@@ -1,0 +1,56 @@
+# MV Agusta F4 312R — Magneti Marelli IAW 7BM
+#
+# STATUS: MINIMAL STUB, not a working definition. The F4 312R does NOT use
+# the IAW 5SM shared by the rest of the pre-Euro3 F4/Brutale range (see
+# mv/5sm-brutale-910.toml) — it's on a different ECU generation, the IAW 7BM,
+# per ECU-tuning/repair listings for this model. Nothing about the 7BM's
+# local identifiers, DTC format, or service routines is known to this
+# project yet. This file exists so:
+#   - the registry has a placeholder entry rather than silently mis-mapping
+#     the 312R onto the 5SM file (which would risk wrong protocol
+#     assumptions on real hardware),
+#   - `motodiag-discover` has a starting point (address/baud guesses,
+#     following general Marelli IAW K-line convention) to probe from,
+#   - the gap is documented rather than hidden — see the MV model-coverage
+#     table in docs/PROTOCOL.md.
+#
+# Do not attempt this against a real 312R until the connector pinout is
+# separately confirmed (docs/MV-PINOUT.md's procedure applies, but nothing
+# about this bike's wiring has been checked).
+
+[ecu]
+id = "mv-7bm-f4-312r"
+name = "Marelli IAW 7BM (F4 312R) — stub"
+manufacturer = "MV Agusta"
+models = ["F4 312R (2007+)"]
+bus = "k-line"
+verified = false
+notes = """
+Different ECU generation from the 5SM used elsewhere in the MV range — do
+not assume shared local IDs or service routines. Everything below is an
+unconfirmed starting guess for discovery, not a working definition.
+"""
+
+[init]
+method = "fast"
+ecu_address = 0x10
+tester_address = 0xF1
+baud = 10400
+
+[identification]
+request = [0x1A, 0x80]
+skip_bytes = 2
+
+[[channels]]
+key = "rpm"
+name = "Engine speed"
+unit = "rpm"
+request = [0x21, 0x01]
+offset = 2
+length = 2
+scale = 0.25
+verified = false
+
+[dtc]
+read_request = [0x18, 0x02, 0xFF, 0x00]
+clear_request = [0x14, 0xFF, 0x00]

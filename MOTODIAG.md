@@ -18,6 +18,11 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   the #1 complaint about every existing K-line tool
 - **Plain-language fault codes** — each known DTC lists likely causes and
   what to physically check, not just a hex code
+- **Reference specs & procedures** — live-data gauges show a "normal range"
+  badge when a spec exists, and service routines carry a full step-by-step
+  procedure, not just a one-line description (see the MV model-coverage
+  table in [docs/PROTOCOL.md](docs/PROTOCOL.md) for exactly which models
+  this applies to today)
 - **One-click bike health report** — self-contained HTML snapshot (identity,
   DTCs with guidance, live data) for pre-purchase inspections or sending to
   a mechanic
@@ -135,5 +140,9 @@ M0, M3, and M5's software-buildable groundwork are done and thoroughly tested
 (cargo test across the whole workspace, simulator- and mock-bus-driven). M1,
 M2, and M4 all require physical access to a real bike (and, for M4, a Windows
 box running JPDiag) and haven't been started. All model-specific values in
-every definition file — Brutale, Ducati K-line, Ducati CAN stub — are
-educated placeholders flagged `verified = false` until confirmed on hardware.
+every definition file — MV (5SM shared range + F4 312R stub), Ducati K-line,
+Ducati CAN stub — are educated placeholders flagged `verified = false` until
+confirmed on hardware. See the MV model-coverage table in
+[docs/PROTOCOL.md](docs/PROTOCOL.md) for exactly which bikes are covered by
+a real definition, which are a minimal stub, and which are a known,
+documented gap (pre-2003 F4 750, Marelli 1.6M).

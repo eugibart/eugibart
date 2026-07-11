@@ -79,6 +79,9 @@ fn iaw_5am_fast_init_full_session() {
         .as_deref()
         .unwrap_or("")
         .contains("Throttle"));
+    // Parity fix: Ducati DTCs must carry causes/checks too, not just MV's.
+    assert!(!dtcs[0].causes.is_empty());
+    assert!(!dtcs[0].checks.is_empty());
 
     let readings: Vec<_> = session
         .poll_all_channels()
@@ -86,6 +89,15 @@ fn iaw_5am_fast_init_full_session() {
         .collect::<Result<_, _>>()
         .expect("all 5AM channels decode");
     assert_eq!(readings.len(), 4); // rpm, tps, ect, batt
+
+    let rpm_spec = session
+        .definition()
+        .channels
+        .iter()
+        .find(|c| c.key == "rpm")
+        .and_then(|c| c.spec.as_ref())
+        .expect("rpm should carry a reference spec");
+    assert!(rpm_spec.min.is_some() && rpm_spec.max.is_some());
 
     session.enable_service_mode();
     match session.run_routine("tps_reset", true) {

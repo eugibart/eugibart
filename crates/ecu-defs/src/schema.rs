@@ -154,10 +154,41 @@ pub struct Channel {
     pub signed: bool,
     #[serde(default)]
     pub verified: bool,
+    /// Expected normal range under a stated condition, e.g. "warm idle,
+    /// neutral". Absent unless the workshop manual (or a verified measurement)
+    /// backs it up — never a guess presented as fact.
+    #[serde(default)]
+    pub spec: Option<ChannelSpec>,
 }
 
 fn default_scale() -> f64 {
     1.0
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ChannelSpec {
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    /// A single target value, when the spec is a point rather than a range
+    /// (e.g. a CO trim target percentage).
+    pub target: Option<f64>,
+    /// The condition this spec applies under — specs are meaningless without
+    /// one ("1100-1300 rpm" means nothing without "warm idle, neutral").
+    pub condition: String,
+}
+
+impl ChannelSpec {
+    /// `None` when there's nothing to check against (no min/max set) or the
+    /// value can't be classified; `Some(true)` when in range.
+    pub fn in_range(&self, value: f64) -> Option<bool> {
+        if self.min.is_none() && self.max.is_none() {
+            return None;
+        }
+        let above_min = self.min.is_none_or(|m| value >= m);
+        let below_max = self.max.is_none_or(|m| value <= m);
+        Some(above_min && below_max)
+    }
 }
 
 impl Channel {
@@ -224,6 +255,10 @@ pub struct Routine {
     pub name: String,
     #[serde(default)]
     pub description: String,
+    /// Full step-by-step procedure, workshop-manual-shaped. Empty means only
+    /// `description` is available — the UI falls back to that.
+    #[serde(default)]
+    pub procedure: Vec<String>,
     pub risk: RiskLevel,
     /// Request payload sent when the routine runs (e.g. StartRoutineByLocalId
     /// or InputOutputControlByLocalId).
@@ -369,6 +404,7 @@ mod tests {
             offset_value: -40.0,
             signed: false,
             verified: false,
+            spec: None,
         };
         // payload: [SID+0x40, echoed id, data...]
         assert_eq!(ch.decode(&[0x61, 0x02, 130]), Some(90.0));
@@ -384,6 +420,7 @@ mod tests {
             offset_value: 0.0,
             signed: false,
             verified: false,
+            spec: None,
         };
         assert_eq!(rpm.decode(&[0x61, 0x01, 0x2E, 0xE0]), Some(3000.0));
     }
@@ -445,6 +482,108 @@ mod tests {
         "#;
         let def: EcuDefinition = toml::from_str(valid).unwrap();
         assert!(def.validate().is_ok());
+    }
+
+    #[test]
+    fn channel_spec_in_range_classification() {
+        let idle_rpm = ChannelSpec {
+            min: Some(1100.0),
+            max: Some(1300.0),
+            target: None,
+            condition: "warm idle, neutral".into(),
+        };
+        assert_eq!(idle_rpm.in_range(1200.0), Some(true));
+        assert_eq!(idle_rpm.in_range(900.0), Some(false));
+        assert_eq!(idle_rpm.in_range(1300.0), Some(true)); // inclusive bound
+
+        let no_bounds = ChannelSpec {
+            min: None,
+            max: None,
+            target: Some(2.0),
+            condition: "any".into(),
+        };
+        assert_eq!(no_bounds.in_range(2.0), None);
+
+        let min_only = ChannelSpec {
+            min: Some(11.5),
+            max: None,
+            target: None,
+            condition: "engine off".into(),
+        };
+        assert_eq!(min_only.in_range(12.8), Some(true));
+        assert_eq!(min_only.in_range(9.0), Some(false));
+    }
+
+    #[test]
+    fn channel_spec_and_routine_procedure_parse_from_toml() {
+        let toml_src = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+
+            [init]
+            method = "fast"
+            ecu_address = 0x10
+            baud = 10400
+
+            [[channels]]
+            key = "rpm"
+            name = "Engine speed"
+            request = [0x21, 0x01]
+            offset = 2
+            length = 2
+            scale = 0.25
+            [channels.spec]
+            min = 1100.0
+            max = 1300.0
+            condition = "warm idle, neutral"
+
+            [[routines]]
+            key = "tps_reset"
+            name = "TPS reset"
+            risk = "medium"
+            request = [0x31, 0x01]
+            procedure = ["Step one", "Step two", "Step three"]
+        "#;
+        let def: EcuDefinition = toml::from_str(toml_src).unwrap();
+        def.validate().unwrap();
+
+        let rpm = &def.channels[0];
+        let spec = rpm.spec.as_ref().expect("spec present");
+        assert_eq!(spec.min, Some(1100.0));
+        assert_eq!(spec.condition, "warm idle, neutral");
+
+        assert_eq!(def.routines[0].procedure.len(), 3);
+        assert_eq!(def.routines[0].procedure[0], "Step one");
+    }
+
+    #[test]
+    fn spec_and_procedure_are_optional() {
+        // A definition with neither field must still parse and validate,
+        // same as before this feature existed.
+        let toml_src = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+
+            [init]
+            method = "fast"
+            ecu_address = 0x10
+            baud = 10400
+
+            [[routines]]
+            key = "r"
+            name = "R"
+            risk = "low"
+            request = [0x3E]
+        "#;
+        let def: EcuDefinition = toml::from_str(toml_src).unwrap();
+        def.validate().unwrap();
+        assert!(def.routines[0].procedure.is_empty());
     }
 
     #[test]

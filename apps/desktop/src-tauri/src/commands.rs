@@ -20,11 +20,20 @@ use crate::state::{load_registry, AppState, Connection, VacuumConnection};
 pub const SIMULATOR_PORT: &str = "simulator";
 
 #[derive(serde::Serialize)]
+pub struct ChannelSpecInfo {
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    pub target: Option<f64>,
+    pub condition: String,
+}
+
+#[derive(serde::Serialize)]
 pub struct ChannelInfo {
     pub key: String,
     pub name: String,
     pub unit: String,
     pub verified: bool,
+    pub spec: Option<ChannelSpecInfo>,
 }
 
 #[derive(serde::Serialize)]
@@ -32,6 +41,8 @@ pub struct RoutineInfo {
     pub key: String,
     pub name: String,
     pub description: String,
+    /// Full step-by-step procedure; empty when only `description` exists.
+    pub procedure: Vec<String>,
     pub risk: String,
     pub verified: bool,
     pub preconditions: Vec<String>,
@@ -83,6 +94,12 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                     name: c.name.clone(),
                     unit: c.unit.clone(),
                     verified: c.verified,
+                    spec: c.spec.as_ref().map(|s| ChannelSpecInfo {
+                        min: s.min,
+                        max: s.max,
+                        target: s.target,
+                        condition: s.condition.clone(),
+                    }),
                 })
                 .collect(),
             routines: def
@@ -92,6 +109,7 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                     key: r.key.clone(),
                     name: r.name.clone(),
                     description: r.description.clone(),
+                    procedure: r.procedure.clone(),
                     risk: match r.risk {
                         RiskLevel::Low => "low".into(),
                         RiskLevel::Medium => "medium".into(),

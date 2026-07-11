@@ -4,6 +4,28 @@ Working notes for the protocol layer (`crates/protocol-kwp2000`). Public
 knowledge: ISO 14230-2/-3. Model-specific knowledge: reverse-engineered, and
 explicitly marked as verified/unverified in the definition files.
 
+## MV Agusta model coverage (explicit, not implied)
+
+MotoDiag's stated goal is the whole pre-Euro3 MV Agusta range. Coverage
+varies by ECU generation, so it's spelled out here rather than left to guess:
+
+| Model | ECU | Status |
+| --- | --- | --- |
+| Brutale 750 (2003-2007) | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| Brutale 910/910R/910S | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| Brutale 989 R | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| Brutale 1078 RR | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| F4 750 (2003+) | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| F4 1000/1000R | Marelli IAW 5SM | Covered by `definitions/mv/5sm-brutale-910.toml` (unverified) |
+| F4 312R (2007+) | Marelli IAW **7BM** (different ECU) | Minimal stub only: `definitions/mv/7bm-f4-312r.toml`. Local IDs, DTC format, and routines are unknown — `motodiag-discover` is the starting point, not a working definition |
+| F4 750 (1999-~2003) | Marelli **1.6M** (older, different ECU) | **Known gap, not covered at all.** Do not attempt against this era of bike; the protocol assumptions in either file above are for a different ECU generation and could produce misleading results |
+
+The 5SM file being shared across six model/displacement variants is a
+genuine "pure reuse" case (same ECU, same protocol) — confirmed via
+ECU-tuning and ECU-repair listings for each model, not assumed from the name
+similarity. The 312R and pre-2003 F4 750 are explicitly different hardware
+and are called out rather than silently mis-mapped onto the 5SM file.
+
 ## Physical layer
 
 - K-line: single wire, bidirectional, 10.4 kbaud, 8N1, idle high (pulled to

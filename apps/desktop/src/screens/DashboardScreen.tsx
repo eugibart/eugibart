@@ -1,12 +1,27 @@
 import { useEffect, useRef, useState } from "react";
-import { api, Reading } from "../ipc";
+import { api, ChannelSpecInfo, ConnectionInfo, Reading } from "../ipc";
 
 const POLL_INTERVAL_MS = 500;
 
-export default function DashboardScreen() {
+export default function DashboardScreen({ connection }: { connection: ConnectionInfo }) {
   const [readings, setReadings] = useState<Reading[]>([]);
+  const [specs, setSpecs] = useState<Record<string, ChannelSpecInfo>>({});
   const [error, setError] = useState<string | null>(null);
   const polling = useRef(false);
+
+  useEffect(() => {
+    api
+      .listDefinitions()
+      .then((defs) => {
+        const def = defs.find((d) => d.id === connection.definition_id);
+        const map: Record<string, ChannelSpecInfo> = {};
+        for (const c of def?.channels ?? []) {
+          if (c.spec) map[c.key] = c.spec;
+        }
+        setSpecs(map);
+      })
+      .catch(() => {});
+  }, [connection.definition_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,15 +53,37 @@ export default function DashboardScreen() {
       <h2>Live data</h2>
       {error && <div className="error-box">{error}</div>}
       <div className="gauges">
-        {readings.map((r) => (
-          <div className="gauge" key={r.key}>
-            <div className="gauge-name">{r.name}</div>
-            <div className="gauge-value">
-              {formatValue(r.value)}
-              <span className="gauge-unit">{r.unit}</span>
+        {readings.map((r) => {
+          const spec = specs[r.key];
+          const inRange =
+            spec && (spec.min !== null || spec.max !== null)
+              ? (spec.min === null || r.value >= spec.min) &&
+                (spec.max === null || r.value <= spec.max)
+              : null;
+          return (
+            <div className="gauge" key={r.key}>
+              <div className="gauge-name">{r.name}</div>
+              <div className="gauge-value">
+                {formatValue(r.value)}
+                <span className="gauge-unit">{r.unit}</span>
+              </div>
+              {spec && (
+                <div
+                  className={`gauge-spec ${
+                    inRange === null ? "" : inRange ? "gauge-spec-ok" : "gauge-spec-bad"
+                  }`}
+                  title={spec.condition}
+                >
+                  {spec.min !== null && spec.max !== null
+                    ? `normal: ${formatValue(spec.min)}–${formatValue(spec.max)}`
+                    : spec.target !== null
+                      ? `target: ${formatValue(spec.target)}`
+                      : spec.condition}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
       {readings.length === 0 && !error && <p className="muted">Waiting for data…</p>}
     </div>

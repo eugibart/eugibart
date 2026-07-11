@@ -140,6 +140,34 @@ fn routine_runs_with_engine_off_and_good_battery() {
 }
 
 #[test]
+fn rpm_spec_classifies_idle_reading_and_routines_carry_procedures() {
+    let (mut session, _handle) = connect_sim(SimConfig::default());
+    let def = session.definition().clone();
+
+    let rpm_channel = def
+        .channels
+        .iter()
+        .find(|c| c.key == "rpm")
+        .expect("rpm channel present");
+    let spec = rpm_channel.spec.as_ref().expect("rpm should carry a spec");
+
+    let rpm = session.read_channel("rpm").expect("read live rpm");
+    // The simulator idles around 1150-1450 rpm; the spec's condition string
+    // explicitly says "confirm per model" — this just proves the spec is
+    // wired through and classifiable, not that the number is verified.
+    let classification = spec.in_range(rpm.value);
+    assert!(classification.is_some(), "spec has bounds, should classify");
+
+    let tps_reset = def.routines.iter().find(|r| r.key == "tps_reset").unwrap();
+    assert!(
+        !tps_reset.procedure.is_empty(),
+        "tps_reset should carry a step-by-step procedure"
+    );
+    let co_trim = def.routines.iter().find(|r| r.key == "co_trim").unwrap();
+    assert!(!co_trim.procedure.is_empty());
+}
+
+#[test]
 fn tps_reset_blocked_on_low_battery() {
     let (mut session, _handle) = connect_sim(SimConfig {
         engine_running: false,

@@ -377,3 +377,20 @@ select, input {
 .sync-kpa { font-size: 16px; font-weight: 600; }
 .sync-delta { font-size: 12px; color: var(--text-muted); }
 .sync-label { font-size: 13px; color: var(--text-muted); }
+
+.gauge-spec {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.gauge-spec-ok { color: var(--ok); }
+.gauge-spec-bad { color: var(--danger); }
+
+.routine-subhead {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
