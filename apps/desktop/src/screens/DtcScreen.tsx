@@ -1,11 +1,26 @@
 import { useEffect, useState } from "react";
-import { api, Dtc } from "../ipc";
+import { api, Dtc, ModGuidanceInfo } from "../ipc";
+import { BikeProfile } from "../garage";
+import { applicableDtcNotes } from "../specResolution";
 
-export default function DtcScreen({ serviceMode }: { serviceMode: boolean }) {
+export default function DtcScreen({
+  serviceMode,
+  definitionId,
+  activeProfile,
+}: {
+  serviceMode: boolean;
+  definitionId: string;
+  activeProfile: BikeProfile | null;
+}) {
   const [dtcs, setDtcs] = useState<Dtc[] | null>(null);
+  const [guidance, setGuidance] = useState<ModGuidanceInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    api.listModGuidance().then(setGuidance).catch(() => {});
+  }, []);
 
   const read = async () => {
     setBusy(true);
@@ -64,41 +79,51 @@ export default function DtcScreen({ serviceMode }: { serviceMode: boolean }) {
 
       {dtcs && dtcs.length > 0 && (
         <div className="dtc-list">
-          {dtcs.map((d) => (
-            <div className="dtc-card" key={d.code}>
-              <div className="dtc-head">
-                <span className="mono dtc-code">
-                  {d.code.toString(16).toUpperCase().padStart(4, "0")}
-                </span>
-                <span className="dtc-desc">
-                  {d.description ?? <span className="muted">unknown code</span>}
-                </span>
-                <span className="mono muted small">
-                  status 0x{d.status.toString(16).toUpperCase().padStart(2, "0")}
-                </span>
+          {dtcs.map((d) => {
+            const modNotes = applicableDtcNotes(definitionId, guidance, activeProfile, d.code);
+            return (
+              <div className="dtc-card" key={d.code}>
+                <div className="dtc-head">
+                  <span className="mono dtc-code">
+                    {d.code.toString(16).toUpperCase().padStart(4, "0")}
+                  </span>
+                  <span className="dtc-desc">
+                    {d.description ?? <span className="muted">unknown code</span>}
+                  </span>
+                  <span className="mono muted small">
+                    status 0x{d.status.toString(16).toUpperCase().padStart(2, "0")}
+                  </span>
+                </div>
+                {d.causes.length > 0 && (
+                  <div className="dtc-section">
+                    <span className="dtc-section-title">Likely causes</span>
+                    <ol className="dtc-items">
+                      {d.causes.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                {d.checks.length > 0 && (
+                  <div className="dtc-section">
+                    <span className="dtc-section-title">What to check</span>
+                    <ol className="dtc-items">
+                      {d.checks.map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+                {modNotes.map((n, i) => (
+                  <div className="mod-note" key={i}>
+                    <span className="mod-note-label">For your mods — community, unverified</span>
+                    <strong>{n.cause}</strong>
+                    <p style={{ margin: "4px 0 0" }}>{n.check}</p>
+                  </div>
+                ))}
               </div>
-              {d.causes.length > 0 && (
-                <div className="dtc-section">
-                  <span className="dtc-section-title">Likely causes</span>
-                  <ol className="dtc-items">
-                    {d.causes.map((c, i) => (
-                      <li key={i}>{c}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              {d.checks.length > 0 && (
-                <div className="dtc-section">
-                  <span className="dtc-section-title">What to check</span>
-                  <ol className="dtc-items">
-                    {d.checks.map((c, i) => (
-                      <li key={i}>{c}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

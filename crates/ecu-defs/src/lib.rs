@@ -8,9 +8,11 @@
 //! The schema deliberately has no way to express memory read/write services:
 //! ECU map access is out of scope for v1 (see docs/SAFETY.md).
 
+pub mod catalog;
 pub mod registry;
 pub mod schema;
 
+pub use catalog::{BikeCatalog, ModGuidance};
 pub use registry::Registry;
 pub use schema::EcuDefinition;
 

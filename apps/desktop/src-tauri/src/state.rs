@@ -9,7 +9,7 @@ use std::sync::Mutex;
 use motodiag_app_core::logging::CsvLogger;
 use motodiag_app_core::vacuum::VacuumGauge;
 use motodiag_app_core::DiagSession;
-use motodiag_ecu_defs::Registry;
+use motodiag_ecu_defs::{BikeCatalog, ModGuidance, Registry};
 
 pub struct Connection {
     pub session: DiagSession,
@@ -64,5 +64,39 @@ pub fn load_registry() -> &'static Registry {
                 .expect("embedded ECU definitions are validated by the workspace tests");
         }
         registry
+    })
+}
+
+/// The bike catalog ("tell me about your bike" wizard data), embedded and
+/// cross-validated against the registry once per process.
+pub fn load_catalog() -> &'static BikeCatalog {
+    static CATALOG: std::sync::OnceLock<BikeCatalog> = std::sync::OnceLock::new();
+    CATALOG.get_or_init(|| {
+        let catalog = BikeCatalog::from_toml(
+            include_str!("../../../../definitions/catalog.toml"),
+            "catalog.toml",
+        )
+        .expect("embedded bike catalog is validated by the workspace tests");
+        catalog
+            .validate(load_registry())
+            .expect("embedded bike catalog cross-validates against the registry");
+        catalog
+    })
+}
+
+/// Community mod guidance (spec adjustments, procedure caveats, DTC notes),
+/// embedded and cross-validated once per process.
+pub fn load_mod_guidance() -> &'static ModGuidance {
+    static GUIDANCE: std::sync::OnceLock<ModGuidance> = std::sync::OnceLock::new();
+    GUIDANCE.get_or_init(|| {
+        let guidance = ModGuidance::from_toml(
+            include_str!("../../../../definitions/mods.toml"),
+            "mods.toml",
+        )
+        .expect("embedded mod guidance is validated by the workspace tests");
+        guidance
+            .validate(load_registry())
+            .expect("embedded mod guidance cross-validates against the registry");
+        guidance
     })
 }

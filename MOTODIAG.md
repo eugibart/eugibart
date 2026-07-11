@@ -23,6 +23,16 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   procedure, not just a one-line description (see the MV model-coverage
   table in [docs/PROTOCOL.md](docs/PROTOCOL.md) for exactly which models
   this applies to today)
+- **"Tell me about your bike" wizard & garage** — describe your bike (brand,
+  model, year, and any modifications: open exhaust, dedicated EPROM, high-flow
+  filter) once and save it; the app resolves the right ECU definition for you
+  and remembers multiple bikes for one-click reconnect. A modified bike's
+  reference ranges are never presented as if they were the factory spec: the
+  Dashboard, service procedures, and fault-code guidance all show *where* a
+  number came from — factory, community-sourced for your mod combo (always
+  labeled unverified), or a target you typed in yourself, which always wins.
+  Bikes MotoDiag can't talk to yet (e.g. the pre-2003 F4 750's Marelli 1.6M)
+  say so honestly instead of guessing
 - **One-click bike health report** — self-contained HTML snapshot (identity,
   DTCs with guidance, live data) for pre-purchase inspections or sending to
   a mechanic

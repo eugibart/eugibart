@@ -96,3 +96,55 @@ fn shipped_definitions_load_and_validate() {
     assert_eq!(can_cfg.tx_id, 0x7E0);
     assert_eq!(can_cfg.rx_id, 0x7E8);
 }
+
+/// The shipped bike catalog and mod guidance must parse, validate, and keep
+/// referential integrity against the shipped definitions — this is the CI
+/// gate that keeps the wizard's data honest.
+#[test]
+fn shipped_catalog_and_mod_guidance_load_and_cross_validate() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../definitions");
+    let registry = Registry::load_dir(&dir).expect("definitions must parse and validate");
+
+    let catalog_text =
+        std::fs::read_to_string(dir.join("catalog.toml")).expect("catalog.toml readable");
+    let catalog = motodiag_ecu_defs::BikeCatalog::from_toml(&catalog_text, "catalog.toml")
+        .expect("catalog parses");
+    catalog
+        .validate(&registry)
+        .expect("catalog cross-validates against shipped definitions");
+
+    // Every claim in the coverage table shows up structurally.
+    assert!(catalog.bikes.len() >= 10);
+    let brands: Vec<&str> = catalog.bikes.iter().map(|b| b.brand.as_str()).collect();
+    assert!(brands.contains(&"MV Agusta") && brands.contains(&"Ducati"));
+    let gap = catalog
+        .bikes
+        .iter()
+        .find(|b| b.model.contains("pre-2003"))
+        .expect("pre-2003 F4 750 gap entry present");
+    assert!(gap.definition_id.is_none());
+    assert!(gap.gap_note.as_deref().is_some_and(|n| n.contains("1.6M")));
+    assert!(catalog.bikes.iter().any(
+        |b| b.definition_id.as_deref() == Some("mv-5sm-brutale-910") && b.model.contains("910")
+    ));
+
+    let mods_text = std::fs::read_to_string(dir.join("mods.toml")).expect("mods.toml readable");
+    let guidance =
+        motodiag_ecu_defs::ModGuidance::from_toml(&mods_text, "mods.toml").expect("mods parses");
+    guidance
+        .validate(&registry)
+        .expect("mod guidance cross-validates against shipped definitions");
+    assert!(!guidance.adjustments.is_empty());
+    assert!(!guidance.procedure_notes.is_empty());
+    assert!(!guidance.dtc_notes.is_empty());
+    // Community content must self-describe as unverified in its conditions.
+    for adj in &guidance.adjustments {
+        for over in &adj.channel_overrides {
+            assert!(
+                over.condition.contains("unverified"),
+                "community condition must self-describe: {}",
+                over.condition
+            );
+        }
+    }
+}

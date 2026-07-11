@@ -3,11 +3,42 @@
 //! live-data snapshot. The use case straight from owner forums: pre-purchase
 //! inspections of used bikes, and "email your mechanic what the ECU says".
 
+use motodiag_ecu_defs::schema::ChannelSpec;
 use motodiag_ecu_defs::EcuDefinition;
 
 use crate::dtc::Dtc;
 use crate::live_data::Reading;
 use crate::session::EcuIdentity;
+
+/// One channel's reference range as already resolved by the frontend
+/// (`specResolution.ts`) — stock, community-adjusted, or the owner's own
+/// target. The report renders this; it never re-resolves it, so the
+/// precedence logic can't fork between the two.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct BikeReportSpec {
+    pub key: String,
+    pub min: Option<f64>,
+    pub max: Option<f64>,
+    pub target: Option<f64>,
+    pub condition: String,
+    /// "stock" | "community-adjusted" | "user-override".
+    pub source: String,
+    pub label: String,
+}
+
+/// The saved bike profile driving this report, passed in from the frontend
+/// garage — the health report is rendered Rust-side but has no persistence
+/// or resolution logic of its own.
+#[derive(Debug, Clone, serde::Deserialize)]
+pub struct BikeReportSection {
+    pub profile_name: String,
+    pub brand: String,
+    pub model: String,
+    pub year: Option<u16>,
+    /// Pre-rendered one-line mod summary (see `describeMods` in garage.ts).
+    pub mods_summary: String,
+    pub specs: Vec<BikeReportSpec>,
+}
 
 pub struct ReportInput<'a> {
     pub def: &'a EcuDefinition,
@@ -19,6 +50,21 @@ pub struct ReportInput<'a> {
     pub simulated: bool,
     /// Milliseconds since the Unix epoch, formatted client-side.
     pub generated_at_ms: u64,
+    /// Present only when the connection was made from a saved garage
+    /// profile — `None` renders a byte-identical legacy report.
+    pub bike: Option<&'a BikeReportSection>,
+}
+
+fn range_text(spec: &ChannelSpec) -> String {
+    match (spec.min, spec.max) {
+        (Some(min), Some(max)) => format!("{min:.2}–{max:.2}"),
+        (Some(min), None) => format!("≥ {min:.2}"),
+        (None, Some(max)) => format!("≤ {max:.2}"),
+        (None, None) => spec
+            .target
+            .map(|t| format!("target {t:.2}"))
+            .unwrap_or_else(|| spec.condition.clone()),
+    }
 }
 
 fn esc(s: &str) -> String {
@@ -94,6 +140,28 @@ indicative, not authoritative.</div>"#,
         esc(&input.identity.text)
     ));
 
+    let mut spec_by_key: std::collections::HashMap<&str, &BikeReportSpec> =
+        std::collections::HashMap::new();
+    if let Some(bike) = input.bike {
+        html.push_str("<h2>Bike</h2>\n");
+        html.push_str(&format!(
+            "<p><strong>{}</strong> — {} {}{}</p>\n<p class=\"meta\">Modifications: {}</p>\n",
+            esc(&bike.profile_name),
+            esc(&bike.brand),
+            esc(&bike.model),
+            bike.year.map(|y| format!(" ({y})")).unwrap_or_default(),
+            esc(&bike.mods_summary),
+        ));
+        for spec in &bike.specs {
+            spec_by_key.insert(spec.key.as_str(), spec);
+        }
+        if bike.specs.iter().any(|s| s.source != "stock") {
+            html.push_str(
+                r#"<div class="banner">Some reference ranges in this report are community-adjusted for this bike's modifications or set by the owner — they are not manufacturer specifications. Look at the Source column in the live-data table below.</div>"#,
+            );
+        }
+    }
+
     html.push_str("<h2>Fault codes</h2>\n");
     if input.dtcs.is_empty() {
         html.push_str("<p class=\"ok\">No stored fault codes.</p>\n");
@@ -131,14 +199,43 @@ indicative, not authoritative.</div>"#,
     if input.readings.is_empty() {
         html.push_str("<p class=\"meta\">No live data captured.</p>\n");
     } else {
-        html.push_str("<table><tr><th>Channel</th><th>Value</th><th>Unit</th></tr>\n");
+        let has_specs = !spec_by_key.is_empty();
+        html.push_str("<table><tr><th>Channel</th><th>Value</th><th>Unit</th>");
+        if has_specs {
+            html.push_str("<th>Reference range</th><th>Source</th>");
+        }
+        html.push_str("</tr>\n");
         for r in input.readings {
             html.push_str(&format!(
-                "<tr><td>{}</td><td class=\"code\">{:.2}</td><td>{}</td></tr>\n",
+                "<tr><td>{}</td><td class=\"code\">{:.2}</td><td>{}</td>",
                 esc(&r.name),
                 r.value,
                 esc(&r.unit),
             ));
+            if has_specs {
+                if let Some(spec) = spec_by_key.get(r.key.as_str()) {
+                    let channel_spec = ChannelSpec {
+                        min: spec.min,
+                        max: spec.max,
+                        target: spec.target,
+                        condition: spec.condition.clone(),
+                    };
+                    let range_text = range_text(&channel_spec);
+                    let cell_class = match channel_spec.in_range(r.value) {
+                        Some(true) => "ok",
+                        Some(false) => "bad",
+                        None => "meta",
+                    };
+                    html.push_str(&format!(
+                        "<td class=\"{cell_class}\">{}</td><td class=\"meta\">{}</td>",
+                        esc(&range_text),
+                        esc(&spec.label),
+                    ));
+                } else {
+                    html.push_str("<td class=\"meta\">—</td><td class=\"meta\">—</td>");
+                }
+            }
+            html.push_str("</tr>\n");
         }
         html.push_str("</table>\n");
     }
@@ -198,6 +295,7 @@ mod tests {
             readings: &readings,
             simulated: true,
             generated_at_ms: 1_752_130_800_000,
+            bike: None,
         });
 
         assert!(html.contains("Bike health report"));
@@ -210,6 +308,9 @@ mod tests {
         // The <fault> in the description must be escaped, not injected.
         assert!(html.contains("&lt;fault&gt;"));
         assert!(!html.contains("<fault>"));
+        // No bike profile: no Bike section, no community/owner banner.
+        assert!(!html.contains("<h2>Bike</h2>"));
+        assert!(!html.contains("community-adjusted for this bike"));
     }
 
     #[test]
@@ -223,8 +324,83 @@ mod tests {
             readings: &readings,
             simulated: false,
             generated_at_ms: 0,
+            bike: None,
         });
         assert!(html.contains("No stored fault codes"));
         assert!(!html.contains("SIMULATED SESSION"));
+    }
+
+    #[test]
+    fn bike_profile_renders_section_sources_and_escapes_name() {
+        let def = load_brutale_def();
+        let (identity, dtcs, readings) = sample_input(&def);
+        let bike = BikeReportSection {
+            profile_name: "<script>alert(1)</script>".into(),
+            brand: "MV Agusta".into(),
+            model: "Brutale 910".into(),
+            year: Some(2006),
+            mods_summary: "open slip-ons (titanium) · dedicated EPROM".into(),
+            specs: vec![BikeReportSpec {
+                key: "rpm".into(),
+                min: Some(1150.0),
+                max: Some(1450.0),
+                target: None,
+                condition: "warm idle, open exhaust — community reference, unverified".into(),
+                source: "community-adjusted".into(),
+                label: "community reference — unverified".into(),
+            }],
+        };
+        let html = render_html(&ReportInput {
+            def: &def,
+            identity: &identity,
+            dtcs: &dtcs,
+            readings: &readings,
+            simulated: false,
+            generated_at_ms: 0,
+            bike: Some(&bike),
+        });
+
+        assert!(html.contains("<h2>Bike</h2>"));
+        assert!(html.contains("MV Agusta"));
+        assert!(html.contains("Brutale 910"));
+        assert!(html.contains("open slip-ons (titanium)"));
+        assert!(html.contains("community-adjusted for this bike"));
+        assert!(html.contains("1150.00–1450.00"));
+        assert!(html.contains("community reference"));
+        assert!(!html.contains("<script>alert(1)</script>"));
+        assert!(html.contains("&lt;script&gt;"));
+    }
+
+    #[test]
+    fn all_stock_sources_show_no_banner() {
+        let def = load_brutale_def();
+        let (identity, dtcs, readings) = sample_input(&def);
+        let bike = BikeReportSection {
+            profile_name: "Stock bike".into(),
+            brand: "MV Agusta".into(),
+            model: "Brutale 910".into(),
+            year: None,
+            mods_summary: "stock".into(),
+            specs: vec![BikeReportSpec {
+                key: "rpm".into(),
+                min: Some(1100.0),
+                max: Some(1300.0),
+                target: None,
+                condition: "warm idle, neutral".into(),
+                source: "stock".into(),
+                label: "stock reference".into(),
+            }],
+        };
+        let html = render_html(&ReportInput {
+            def: &def,
+            identity: &identity,
+            dtcs: &dtcs,
+            readings: &readings,
+            simulated: false,
+            generated_at_ms: 0,
+            bike: Some(&bike),
+        });
+        assert!(html.contains("<h2>Bike</h2>"));
+        assert!(!html.contains("community-adjusted for this bike"));
     }
 }

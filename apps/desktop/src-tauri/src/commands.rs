@@ -14,7 +14,9 @@ use motodiag_kwp2000::init::FastInitConfig;
 use motodiag_transport::{mock, KLineTransport};
 use tauri::State;
 
-use crate::state::{load_registry, AppState, Connection, VacuumConnection};
+use crate::state::{
+    load_catalog, load_mod_guidance, load_registry, AppState, Connection, VacuumConnection,
+};
 
 /// Sentinel "port" that connects to the in-process simulated ECU.
 pub const SIMULATOR_PORT: &str = "simulator";
@@ -121,6 +123,20 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                 .collect(),
         })
         .collect()
+}
+
+/// The structured bike catalog backing the "tell me about your bike" wizard.
+/// Purely descriptive data (see ecu-defs catalog module) — serialized as-is.
+#[tauri::command]
+pub async fn list_bike_catalog() -> Vec<motodiag_ecu_defs::catalog::CatalogBike> {
+    load_catalog().bikes.clone()
+}
+
+/// Community mod guidance: spec adjustments, procedure caveats, DTC notes.
+/// Unverified by construction; the frontend labels every use.
+#[tauri::command]
+pub async fn list_mod_guidance() -> motodiag_ecu_defs::ModGuidance {
+    load_mod_guidance().clone()
 }
 
 fn describe_preconditions(p: &motodiag_ecu_defs::schema::Preconditions) -> Vec<String> {
@@ -328,9 +344,14 @@ pub async fn start_csv_log(state: State<'_, AppState>) -> Result<String, String>
 }
 
 /// Read fresh DTCs + live data from the connected ECU and write a
-/// self-contained HTML health report. Returns the file path.
+/// self-contained HTML health report. Returns the file path. `bike` is the
+/// frontend's already-resolved profile (see specResolution.ts) — `None`
+/// produces a byte-identical legacy report with no Bike section.
 #[tauri::command]
-pub async fn export_health_report(state: State<'_, AppState>) -> Result<String, String> {
+pub async fn export_health_report(
+    state: State<'_, AppState>,
+    bike: Option<motodiag_app_core::report::BikeReportSection>,
+) -> Result<String, String> {
     use motodiag_app_core::report::{render_html, ReportInput};
 
     with_connection(&state, |conn| {
@@ -353,6 +374,7 @@ pub async fn export_health_report(state: State<'_, AppState>) -> Result<String, 
             readings: &readings,
             simulated: conn.sim_thread.is_some(),
             generated_at_ms: now_ms,
+            bike: bike.as_ref(),
         });
 
         let dir = std::env::temp_dir().join("motodiag-reports");

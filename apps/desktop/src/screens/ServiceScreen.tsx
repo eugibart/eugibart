@@ -1,14 +1,19 @@
 import { useEffect, useState } from "react";
-import { api, ConnectionInfo, RoutineInfo } from "../ipc";
+import { api, ConnectionInfo, ModGuidanceInfo, RoutineInfo } from "../ipc";
+import { BikeProfile } from "../garage";
+import { applicableProcedureNotes } from "../specResolution";
 
 export default function ServiceScreen({
   connection,
   onStatusChange,
+  activeProfile,
 }: {
   connection: ConnectionInfo;
   onStatusChange: () => void;
+  activeProfile: BikeProfile | null;
 }) {
   const [routines, setRoutines] = useState<RoutineInfo[]>([]);
+  const [guidance, setGuidance] = useState<ModGuidanceInfo | null>(null);
   const [confirmKey, setConfirmKey] = useState<string | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [result, setResult] = useState<string | null>(null);
@@ -16,11 +21,11 @@ export default function ServiceScreen({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    api
-      .listDefinitions()
-      .then((defs) => {
+    Promise.all([api.listDefinitions(), api.listModGuidance()])
+      .then(([defs, guidanceInfo]) => {
         const def = defs.find((d) => d.id === connection.definition_id);
         setRoutines(def?.routines ?? []);
+        setGuidance(guidanceInfo);
       })
       .catch((e) => setError(String(e)));
   }, [connection.definition_id]);
@@ -113,6 +118,14 @@ export default function ServiceScreen({
                   ))}
                 </ol>
               </>
+            )}
+            {applicableProcedureNotes(connection.definition_id, guidance, activeProfile, r.key).map(
+              (note, i) => (
+                <div className="mod-note" key={i}>
+                  <span className="mod-note-label">For your mods — community, unverified</span>
+                  {note}
+                </div>
+              ),
             )}
             <button
               className="btn"

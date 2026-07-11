@@ -1,0 +1,262 @@
+import { useEffect, useState } from "react";
+import {
+  api,
+  CatalogBikeInfo,
+  ConnectionInfo,
+  DefinitionInfo,
+  ModGuidanceInfo,
+  SIMULATOR_PORT,
+  TroubleshootStep,
+} from "../../ipc";
+import { BikeProfile, rememberActiveProfile, useGarage } from "../../garage";
+import GaragePanel from "./GaragePanel";
+import BikeWizard from "./BikeWizard";
+
+export default function ConnectScreen({
+  onConnected,
+}: {
+  onConnected: (info: ConnectionInfo, profile: BikeProfile | null) => void;
+}) {
+  const [definitions, setDefinitions] = useState<DefinitionInfo[]>([]);
+  const [catalog, setCatalog] = useState<CatalogBikeInfo[]>([]);
+  const [guidance, setGuidance] = useState<ModGuidanceInfo | null>(null);
+  const [ports, setPorts] = useState<string[]>([]);
+  const [port, setPort] = useState(SIMULATOR_PORT);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [troubleshooting, setTroubleshooting] = useState(false);
+  const [steps, setSteps] = useState<TroubleshootStep[] | null>(null);
+
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<BikeProfile | null>(null);
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [advancedDefinitionId, setAdvancedDefinitionId] = useState("");
+  // Whichever definition was last attempted, garage or Advanced — the
+  // troubleshooter tests against it (see docs on the design decision).
+  const [troubleshootDefinitionId, setTroubleshootDefinitionId] = useState("");
+
+  const { profiles, addProfile, updateProfile, removeProfile } = useGarage();
+
+  const refresh = async () => {
+    const [defs, portList, catalogList, guidanceInfo] = await Promise.all([
+      api.listDefinitions(),
+      api.listSerialPorts(),
+      api.listBikeCatalog(),
+      api.listModGuidance(),
+    ]);
+    setDefinitions(defs);
+    setPorts(portList);
+    setCatalog(catalogList);
+    setGuidance(guidanceInfo);
+    if (!advancedDefinitionId && defs.length > 0) {
+      const brutale = defs.find((d) => d.id.includes("brutale")) ?? defs[0];
+      setAdvancedDefinitionId(brutale.id);
+      setTroubleshootDefinitionId(brutale.id);
+    }
+  };
+
+  useEffect(() => {
+    refresh().catch((e) => setError(String(e)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const connectWith = async (definitionId: string, profile: BikeProfile | null) => {
+    setBusy(true);
+    setError(null);
+    setSteps(null);
+    setTroubleshootDefinitionId(definitionId);
+    try {
+      const info = await api.connect(definitionId, port);
+      rememberActiveProfile(profile?.id ?? null);
+      onConnected(info, profile);
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const troubleshoot = async () => {
+    setTroubleshooting(true);
+    setSteps(null);
+    setError(null);
+    try {
+      setSteps(await api.troubleshootConnection(troubleshootDefinitionId, port));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setTroubleshooting(false);
+    }
+  };
+
+  const saveProfile = (profile: BikeProfile, alsoConnect: boolean) => {
+    if (editingProfile) updateProfile(profile);
+    else addProfile(profile);
+    setWizardOpen(false);
+    setEditingProfile(null);
+    if (alsoConnect) connectWith(profile.definitionId, profile);
+  };
+
+  const advancedDef = definitions.find((d) => d.id === advancedDefinitionId);
+
+  return (
+    <div className="panel panel-wide">
+      <h2>Connect to a bike</h2>
+
+      {!wizardOpen && (
+        <>
+          <h3>Your garage</h3>
+          <GaragePanel
+            profiles={profiles}
+            definitions={definitions}
+            busy={busy}
+            onConnect={(p) => connectWith(p.definitionId, p)}
+            onEdit={(p) => {
+              setEditingProfile(p);
+              setWizardOpen(true);
+            }}
+            onRemove={removeProfile}
+          />
+          <p className="btn-row">
+            <button
+              className="btn btn-primary"
+              onClick={() => {
+                setEditingProfile(null);
+                setWizardOpen(true);
+              }}
+            >
+              Add your bike
+            </button>
+          </p>
+        </>
+      )}
+
+      {wizardOpen && (
+        <BikeWizard
+          catalog={catalog}
+          definitions={definitions}
+          guidance={guidance}
+          initialProfile={editingProfile ?? undefined}
+          onCancel={() => {
+            setWizardOpen(false);
+            setEditingProfile(null);
+          }}
+          onSave={saveProfile}
+        />
+      )}
+
+      <div className="form-row section-gap">
+        <label htmlFor="connect-port">Port</label>
+        <select id="connect-port" value={port} onChange={(e) => setPort(e.target.value)}>
+          {ports.map((p) => (
+            <option key={p} value={p}>
+              {p === SIMULATOR_PORT ? "Built-in ECU simulator (no hardware)" : p}
+            </option>
+          ))}
+        </select>
+        <button className="btn btn-small" onClick={() => refresh()}>
+          <span aria-hidden="true">↻</span> Refresh
+        </button>
+        <button
+          className="btn btn-small"
+          onClick={troubleshoot}
+          disabled={troubleshooting || !troubleshootDefinitionId}
+          title="Step-by-step check of cable, port, wiring, and ECU handshake"
+        >
+          {troubleshooting ? "Testing…" : "Troubleshoot connection"}
+        </button>
+      </div>
+
+      {error && (
+        <div className="error-box" role="alert">
+          {error}
+        </div>
+      )}
+
+      {steps && (
+        <div className="ts-panel" role="status" aria-live="polite">
+          <h3>Connection check</h3>
+          {steps.map((s) => (
+            <div className={`ts-step ts-${s.status}`} key={s.name}>
+              <div className="ts-head">
+                <span className="ts-icon">
+                  {s.status === "passed" ? "✓" : s.status === "failed" ? "✗" : "○"}
+                </span>
+                <span className="ts-name">{s.name}</span>
+              </div>
+              <div className="ts-detail">{s.detail}</div>
+              {s.suggestion && <div className="ts-suggestion">→ {s.suggestion}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <button
+        className="btn btn-small section-gap"
+        aria-expanded={advancedOpen}
+        aria-controls="advanced-connect"
+        onClick={() => setAdvancedOpen((v) => !v)}
+      >
+        {advancedOpen ? "Hide" : "Show"} advanced (pick an ECU definition directly)
+      </button>
+
+      {advancedOpen && (
+        <div id="advanced-connect" className="def-details">
+          <p className="muted small">
+            Pick the ECU definition directly if your bike isn't in the catalog, or you just want
+            to connect without saving a profile.
+          </p>
+          <div className="form-row">
+            <label htmlFor="connect-definition">ECU definition</label>
+            <select
+              id="connect-definition"
+              value={advancedDefinitionId}
+              onChange={(e) => setAdvancedDefinitionId(e.target.value)}
+            >
+              {definitions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.manufacturer} — {d.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {advancedDef && (
+            <div className="def-details">
+              <div>
+                <span className="muted">Bus:</span> {advancedDef.bus}
+                {"  "}
+                {advancedDef.verified ? (
+                  <span className="badge badge-ok">verified</span>
+                ) : (
+                  <span className="badge badge-warn">unverified definition</span>
+                )}
+              </div>
+              {advancedDef.models.length > 0 && (
+                <div>
+                  <span className="muted">Models:</span> {advancedDef.models.join(", ")}
+                </div>
+              )}
+              {advancedDef.notes && <p className="notes">{advancedDef.notes}</p>}
+            </div>
+          )}
+
+          <div className="btn-row">
+            <button
+              className="btn btn-primary"
+              onClick={() => connectWith(advancedDefinitionId, null)}
+              disabled={busy || !advancedDefinitionId}
+            >
+              {busy ? "Connecting…" : "Connect without saving"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <p className="muted small">
+        Connecting is always read-only. Service operations require explicitly enabling service
+        mode after connecting.
+      </p>
+    </div>
+  );
+}

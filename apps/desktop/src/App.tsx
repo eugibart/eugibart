@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api, ConnectionInfo } from "./ipc";
-import ConnectScreen from "./screens/ConnectScreen";
+import { BikeProfile, recallActiveProfile, rememberActiveProfile, useGarage } from "./garage";
+import ConnectScreen from "./screens/connect/ConnectScreen";
 import DashboardScreen from "./screens/DashboardScreen";
 import DtcScreen from "./screens/DtcScreen";
 import ServiceScreen from "./screens/ServiceScreen";
@@ -33,6 +34,12 @@ function initialTheme(): Theme {
 export default function App() {
   const [tab, setTab] = useState<Tab>("connect");
   const [connection, setConnection] = useState<ConnectionInfo | null>(null);
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
+  const { profiles } = useGarage();
+  // Derived, not stored: re-reads from the live garage store on every
+  // render, so an edit (e.g. a spec override saved from the Dashboard)
+  // shows up immediately instead of needing a stale snapshot refreshed.
+  const activeProfile = profiles.find((p) => p.id === activeProfileId) ?? null;
   // WCAG 2.1.4: single-character shortcuts must be user-disableable.
   const [shortcuts, setShortcuts] = useState(
     () => localStorage.getItem(SHORTCUTS_KEY) !== "off",
@@ -52,10 +59,19 @@ export default function App() {
 
   const refreshStatus = useCallback(async () => {
     try {
-      setConnection(await api.connectionStatus());
+      const status = await api.connectionStatus();
+      setConnection(status);
+      // Re-associate with the saved profile after a reload — honest by
+      // construction: this looks the id up directly rather than guessing
+      // from the definition, so a stale/missing id just means no profile.
+      setActiveProfileId(status ? (recallActiveProfile(profiles)?.id ?? null) : null);
     } catch {
       setConnection(null);
+      setActiveProfileId(null);
     }
+    // profiles is a stable external-store snapshot; refreshStatus only needs
+    // to run on mount and on demand, not whenever the garage changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -84,14 +100,17 @@ export default function App() {
     localStorage.setItem(SHORTCUTS_KEY, next ? "on" : "off");
   };
 
-  const handleConnected = (info: ConnectionInfo) => {
+  const handleConnected = (info: ConnectionInfo, profile: BikeProfile | null) => {
     setConnection(info);
+    setActiveProfileId(profile?.id ?? null);
     setTab("dashboard");
   };
 
   const handleDisconnect = async () => {
     await api.disconnect();
     setConnection(null);
+    setActiveProfileId(null);
+    rememberActiveProfile(null);
     setTab("connect");
   };
 
@@ -113,7 +132,8 @@ export default function App() {
                 aria-hidden="true"
               />
               <span className="conn-text">
-                Connected: {connection.definition_name}
+                Connected: {activeProfile ? `${activeProfile.name} — ` : ""}
+                {connection.definition_name}
                 {connection.simulated ? " (simulator)" : ""}
               </span>
               {connection.service_mode && (
@@ -166,13 +186,27 @@ export default function App() {
 
       <main className="content" id="main" tabIndex={-1}>
         {tab === "connect" && <ConnectScreen onConnected={handleConnected} />}
-        {tab === "dashboard" && connection && <DashboardScreen connection={connection} />}
-        {tab === "dtcs" && connection && <DtcScreen serviceMode={connection.service_mode} />}
+        {tab === "dashboard" && connection && (
+          <DashboardScreen connection={connection} activeProfile={activeProfile} />
+        )}
+        {tab === "dtcs" && connection && (
+          <DtcScreen
+            serviceMode={connection.service_mode}
+            definitionId={connection.definition_id}
+            activeProfile={activeProfile}
+          />
+        )}
         {tab === "service" && connection && (
-          <ServiceScreen connection={connection} onStatusChange={refreshStatus} />
+          <ServiceScreen
+            connection={connection}
+            onStatusChange={refreshStatus}
+            activeProfile={activeProfile}
+          />
         )}
         {tab === "sync" && <SyncScreen ecuConnected={connection !== null} />}
-        {tab === "logging" && connection && <LoggingScreen />}
+        {tab === "logging" && connection && (
+          <LoggingScreen activeProfile={activeProfile} />
+        )}
       </main>
     </div>
   );

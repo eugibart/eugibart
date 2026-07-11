@@ -30,9 +30,14 @@ impl Registry {
                 source,
             })?;
             let path = entry.path();
+            // The bike catalog and mod-guidance files share the definitions
+            // directory but are a different schema (see catalog.rs).
+            let is_catalog_file = path
+                .file_name()
+                .is_some_and(|n| n == "catalog.toml" || n == "mods.toml");
             if path.is_dir() {
                 self.load_dir_into(&path)?;
-            } else if path.extension().is_some_and(|ext| ext == "toml") {
+            } else if !is_catalog_file && path.extension().is_some_and(|ext| ext == "toml") {
                 let text = std::fs::read_to_string(&path).map_err(|source| DefsError::Io {
                     path: path.display().to_string(),
                     source,

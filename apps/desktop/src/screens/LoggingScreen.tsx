@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { api } from "../ipc";
+import { api, BikeReportInfo } from "../ipc";
+import { BikeProfile, describeMods } from "../garage";
+import { resolveSpecs } from "../specResolution";
 
-export default function LoggingScreen() {
+export default function LoggingScreen({ activeProfile }: { activeProfile: BikeProfile | null }) {
   const [logPath, setLogPath] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reportPath, setReportPath] = useState<string | null>(null);
@@ -37,7 +39,35 @@ export default function LoggingScreen() {
     setError(null);
     setExporting(true);
     try {
-      setReportPath(await api.exportHealthReport());
+      let bike: BikeReportInfo | null = null;
+      if (activeProfile) {
+        const [status, defs, guidance] = await Promise.all([
+          api.connectionStatus(),
+          api.listDefinitions(),
+          api.listModGuidance(),
+        ]);
+        const def = defs.find((d) => d.id === status?.definition_id);
+        if (def) {
+          const specs = resolveSpecs(def, guidance, activeProfile);
+          bike = {
+            profile_name: activeProfile.name,
+            brand: activeProfile.brand,
+            model: activeProfile.model,
+            year: activeProfile.year,
+            mods_summary: describeMods(activeProfile.mods),
+            specs: Object.entries(specs).map(([key, s]) => ({
+              key,
+              min: s.min,
+              max: s.max,
+              target: s.target,
+              condition: s.condition,
+              source: s.source,
+              label: s.label,
+            })),
+          };
+        }
+      }
+      setReportPath(await api.exportHealthReport(bike));
     } catch (e) {
       setError(String(e));
     } finally {

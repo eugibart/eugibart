@@ -9,6 +9,8 @@ fn main() {
         .manage(state::AppState::default())
         .invoke_handler(tauri::generate_handler![
             commands::list_definitions,
+            commands::list_bike_catalog,
+            commands::list_mod_guidance,
             commands::list_serial_ports,
             commands::connect,
             commands::disconnect,

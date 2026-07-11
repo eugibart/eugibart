@@ -280,7 +280,7 @@ h3 { font-size: 15px; margin: 0 0 8px; }
 .form-row { display: flex; align-items: center; gap: 12px; margin: 14px 0; flex-wrap: wrap; }
 .form-row label { width: 130px; color: var(--text-muted); font-size: 14px; }
 
-select, input {
+select, input, textarea {
   background: var(--bg-raised);
   color: var(--text);
   border: 1px solid var(--border-ui);
@@ -292,8 +292,74 @@ select, input {
   max-width: 100%;
   transition: border-color var(--dur);
 }
-select:hover, input:hover { border-color: var(--text-muted); }
+select:hover, input:hover, textarea:hover { border-color: var(--text-muted); }
+input[type="number"] { min-width: 100px; }
+textarea { resize: vertical; }
 ::placeholder { color: var(--text-muted); opacity: 1; }
+
+/* ---------- Wizard: fieldsets & radio groups ---------- */
+
+.wizard { max-width: 620px; }
+
+.fieldset {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px 14px;
+  margin: 14px 0;
+}
+.fieldset legend {
+  padding: 0 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+
+.radio-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+.radio-row input { min-width: 0; width: auto; }
+.radio-row-indent { margin: 6px 0 2px 22px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.radio-row-inline { display: inline-flex; align-items: center; gap: 5px; font-size: 13.5px; cursor: pointer; }
+.radio-row-inline input { min-width: 0; width: auto; }
+
+/* ---------- Garage ---------- */
+
+.garage-list { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.garage-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+}
+.garage-card-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.garage-card-name { font-weight: 650; font-size: 15px; }
+
+/* ---------- Mod-guidance callouts (community, unverified) ---------- */
+
+.mod-note {
+  margin-top: 10px;
+  padding: 10px 13px;
+  border-radius: var(--radius-sm);
+  background: rgba(250, 178, 25, 0.07);
+  border: 1px solid rgba(250, 178, 25, 0.35);
+  font-size: 13.5px;
+}
+.mod-note-label {
+  display: block;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--warn);
+  margin-bottom: 4px;
+}
 
 .btn {
   background: var(--bg-raised);

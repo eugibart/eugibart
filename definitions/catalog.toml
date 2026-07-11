@@ -1,0 +1,149 @@
+# Bike catalog: brand → model → year → ECU definition.
+#
+# This file drives the "tell me about your bike" wizard. It is purely
+# descriptive — nothing here can make the app send a byte. Every
+# definition_id is cross-validated against the loaded definitions at test
+# time and at app startup (see crates/ecu-defs/src/catalog.rs).
+#
+# A bike with no definition_id MUST carry a gap_note explaining honestly why
+# MotoDiag can't talk to it. Year ranges and ECU mappings are sourced from
+# the model lists in the definition files and the coverage table in
+# docs/PROTOCOL.md — do not add a mapping that isn't backed there.
+
+# ---------------- MV Agusta — Marelli IAW 5SM family ----------------
+
+[[bikes]]
+brand = "MV Agusta"
+model = "Brutale 750"
+year_from = 2003
+year_to = 2007
+definition_id = "mv-5sm-brutale-910"
+
+[[bikes]]
+brand = "MV Agusta"
+model = "Brutale 910"
+variants = ["910", "910R", "910S"]
+year_from = 2005
+year_to = 2008
+definition_id = "mv-5sm-brutale-910"
+
+[[bikes]]
+brand = "MV Agusta"
+model = "Brutale 989R"
+year_from = 2008
+year_to = 2010
+definition_id = "mv-5sm-brutale-910"
+
+[[bikes]]
+brand = "MV Agusta"
+model = "Brutale 1078RR"
+year_from = 2008
+year_to = 2010
+definition_id = "mv-5sm-brutale-910"
+
+[[bikes]]
+brand = "MV Agusta"
+model = "F4 750"
+year_from = 2003
+year_to = 2004
+definition_id = "mv-5sm-brutale-910"
+gap_note = "Only 2003-onwards F4 750s use the IAW 5SM this maps to. If yours is earlier, pick the pre-2003 entry instead."
+
+[[bikes]]
+brand = "MV Agusta"
+model = "F4 1000"
+variants = ["1000S", "1000R", "Tamburini"]
+year_from = 2004
+year_to = 2007
+definition_id = "mv-5sm-brutale-910"
+
+# ---------------- MV Agusta — different or unsupported ECUs ----------------
+
+[[bikes]]
+brand = "MV Agusta"
+model = "F4 312R"
+year_from = 2007
+year_to = 2010
+definition_id = "mv-7bm-f4-312r"
+gap_note = "The 312R uses the Marelli IAW 7BM — MotoDiag's definition for it is a minimal, unverified stub. Expect identification to work at best; live data and routines are not mapped yet."
+
+[[bikes]]
+brand = "MV Agusta"
+model = "F4 750 (pre-2003)"
+year_from = 1999
+year_to = 2002
+gap_note = "Pre-2003 F4 750s use the older Marelli IAW 1.6M ECU, which MotoDiag can't talk to yet. Connecting with another definition could produce misleading results — we won't pretend otherwise."
+
+# ---------------- Ducati — Marelli IAW 5AM ----------------
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 696"
+year_from = 2008
+year_to = 2014
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 1100"
+year_from = 2009
+year_to = 2010
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Hypermotard 796"
+year_from = 2010
+year_to = 2012
+definition_id = "ducati-iaw-5am"
+
+[[bikes]]
+brand = "Ducati"
+model = "Hypermotard 1100"
+year_from = 2007
+year_to = 2012
+definition_id = "ducati-iaw-5am"
+
+# ---------------- Ducati — Marelli IAW 59M ----------------
+
+[[bikes]]
+brand = "Ducati"
+model = "748"
+year_from = 1995
+year_to = 2003
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "916"
+year_from = 1994
+year_to = 1998
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "996"
+year_from = 1999
+year_to = 2001
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "998"
+year_from = 2002
+year_to = 2004
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster 900 i.e."
+year_from = 2000
+year_to = 2002
+definition_id = "ducati-iaw-59m"
+
+[[bikes]]
+brand = "Ducati"
+model = "Monster S4"
+year_from = 2001
+year_to = 2003
+definition_id = "ducati-iaw-59m"

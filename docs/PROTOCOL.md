@@ -26,6 +26,12 @@ ECU-tuning and ECU-repair listings for each model, not assumed from the name
 similarity. The 312R and pre-2003 F4 750 are explicitly different hardware
 and are called out rather than silently mis-mapped onto the 5SM file.
 
+This table's claims are structured, not just prose: `definitions/catalog.toml`
+maps each brand/model/year range to its `definitions/*.toml` id (or to a
+`gap_note` for the two rows above with no working definition), and is
+cross-validated against the real definitions in CI. It's the data source
+behind the "tell me about your bike" wizard on the Connect screen.
+
 ## Physical layer
 
 - K-line: single wire, bidirectional, 10.4 kbaud, 8N1, idle high (pulled to
