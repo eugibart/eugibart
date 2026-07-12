@@ -159,6 +159,11 @@ permanent regression tests.
 
 ## Roadmap
 
+The full forward-looking roadmap — current gaps flagged file-by-file, plus
+phased future requirements (hardware validation, release/signing pipeline,
+data depth, CAN wiring, localization, hardening) — lives in
+[ROADMAP.md](ROADMAP.md). The original milestones, for the record:
+
 - **M0** ✅ workspace, protocol core, ECU simulator, desktop shell, CI
 - **M1** *(needs the physical bike — not done)* real K-line connect + ECU
   identification on the Brutale, verify connector pinout, capture first traces
@@ -179,8 +184,9 @@ Owner-forum research (mvagusta.net, ducati.ms/.org) drove three additions
 beyond the original milestones: the connection troubleshooter (P0 — attacks
 the single most-complained-about failure mode of JPDiag/MelcoDiag-era tools),
 the plain-language DTC causes/checks library, and the HTML health report.
-Still on the researched backlog: log charts, a community definition-exchange
-flow, and a scripted charging-system health check.
+The scripted charging-system health check has since shipped (the guided
+charging test); log charts and a community definition-exchange flow remain
+open — tracked in [ROADMAP.md](ROADMAP.md).
 
 ## Status
 
