@@ -39,14 +39,14 @@ export const ZONE_COORDS: Record<BodyStyle, Record<AccessZone, { x: number; y: n
     "side-panel-right": { x: 186, y: 112 },
   },
   faired: {
-    "under-seat": { x: 162, y: 82 },
-    "under-tank-left": { x: 215, y: 92 },
-    "under-tank-right": { x: 215, y: 92 },
-    "under-tank-center": { x: 228, y: 90 },
-    "tail-section": { x: 90, y: 55 },
-    "dash-area": { x: 268, y: 46 },
-    "side-panel-left": { x: 266, y: 122 },
-    "side-panel-right": { x: 266, y: 122 },
+    "under-seat": { x: 162, y: 92 },
+    "under-tank-left": { x: 214, y: 96 },
+    "under-tank-right": { x: 214, y: 96 },
+    "under-tank-center": { x: 228, y: 94 },
+    "tail-section": { x: 90, y: 60 },
+    "dash-area": { x: 272, y: 54 },
+    "side-panel-left": { x: 262, y: 130 },
+    "side-panel-right": { x: 262, y: 130 },
   },
 };
 
@@ -140,54 +140,55 @@ function NakedSilhouette() {
   );
 }
 
-/* Proportions measured from a reference photo of an F4 1000 (wheelbase-
-   normalized): level tank flowing into the long, high tail that overhangs
-   the rear wheel, tall far-forward screen, deep lower fairing with the
-   red/silver seam, organ-pipe tips at the very rear of the tail. */
+/* Dimension-true to the factory figures (via a schematic reference):
+   ground y=196 with wheel r=40 ≈ 300 mm, so 7.5 mm/unit — screen top at
+   the 1165 mm line, seat at 810 mm, belly at 120 mm ground clearance,
+   beak nose and tail overhangs from the 2060 mm overall length. */
 function FairedSilhouette() {
   return (
     <g>
       <Wheel cx={312} />
       <Wheel cx={88} />
-      {/* fork visible below the nose + front fender */}
+      {/* raked fork in the pocket between fender and beak + front fender */}
       <g className="bike-line">
-        <path d="M313 152 L305 118" />
-        <path d="M306 150 L298 116" />
-        <path d="M287 125 Q312 98 337 125" />
+        <path d="M313 152 L302 124" />
+        <path d="M306 150 L295 122" />
+        <path d="M287 124 Q312 102 337 124" />
       </g>
-      {/* upper body: tank -> saddle -> tail overhanging the rear wheel */}
+      {/* upper body: tank -> saddle -> long tail past the rear axle */}
       <path
         className="bike-fill"
-        d="M272 52 C252 59 216 56 198 55 C190 57 186 60 182 63 C174 71 166 73 158 73 C142 66 126 54 110 46 L64 43 C56 44 54 48 57 53 L61 63 C76 64 94 66 112 68 C128 71 140 76 150 80 C162 85 172 87 180 88 C202 91 224 89 242 84 C254 79 264 64 272 52 Z"
+        d="M266 62 C250 66 218 66 202 64 C192 65 186 70 182 74 C174 84 166 87 158 87 C144 78 130 64 116 54 L62 50 C54 51 52 55 55 60 L58 68 C74 70 92 72 110 74 C126 77 138 82 148 88 C160 93 170 95 178 96 C200 98 222 96 240 90 C252 85 260 74 266 62 Z"
       />
-      {/* fairing: nose with headlight face, low belly, vertical rear cut */}
+      {/* fairing: beak nose, lower edge wrapping behind the front wheel,
+          flat 120 mm belly, vertical rear cut */}
       <path
         className="bike-fill"
-        d="M272 52 L316 50 C326 56 332 74 330 90 C328 98 322 102 316 102 C300 122 278 142 256 154 C236 163 214 166 198 163 L196 104 C210 96 232 90 244 84 C254 78 264 62 272 52 Z"
+        d="M266 62 L316 58 C332 64 342 74 344 84 C345 90 341 95 334 97 C324 106 312 112 302 120 C290 138 278 154 262 166 C242 176 216 180 200 178 L196 108 C210 100 228 95 240 90 C250 85 260 74 266 62 Z"
       />
-      {/* windscreen: tall, far forward */}
-      <path className="bike-fill" d="M290 28 C300 36 310 43 318 49 L272 53 C277 43 283 34 290 28 Z" />
-      {/* headlight slit + fairing/tank seam */}
+      {/* windscreen up to the 1165 mm overall-height line */}
+      <path className="bike-fill" d="M287 42 C296 46 306 52 314 58 L268 62 C273 53 280 46 287 42 Z" />
+      {/* headlight slit + fairing seam */}
       <g className="bike-thin">
-        <path d="M320 58 C326 68 329 80 328 90" />
-        <path d="M300 76 C282 96 258 122 240 146" />
+        <path d="M330 68 C336 74 340 80 341 86" />
+        <path d="M298 84 C280 106 256 132 238 158" />
       </g>
-      {/* organ pipes exiting the tail rear */}
-      <path className="bike-line" d="M62 57 L50 56 M62 63 L50 62" />
+      {/* organ pipes at the tail rear */}
+      <path className="bike-line" d="M60 62 L48 61 M60 68 L48 67" />
       <g className="bike-thin">
-        <circle cx="49" cy="56" r="2.4" />
-        <circle cx="49" cy="62" r="2.4" />
+        <circle cx="47" cy="61" r="2.4" />
+        <circle cx="47" cy="67" r="2.4" />
       </g>
       {/* rear hugger */}
-      <path className="bike-thin" d="M66 126 Q88 110 110 124" />
+      <path className="bike-thin" d="M64 128 Q88 112 112 126" />
       {/* engine cases in the cutout behind the fairing */}
-      <rect className="bike-line" x="158" y="100" width="40" height="36" rx="7" />
+      <rect className="bike-line" x="156" y="104" width="42" height="38" rx="7" />
       <g className="bike-thin">
-        <circle cx="176" cy="120" r="8" />
-        <path d="M162 108 L196 106" />
+        <circle cx="176" cy="126" r="8" />
+        <path d="M160 114 L196 112" />
       </g>
       {/* single-sided swingarm */}
-      <path className="bike-fill" d="M158 134 L96 148 L98 160 L162 146 Z" />
+      <path className="bike-fill" d="M158 136 L96 148 L98 160 L162 148 Z" />
       <path className="bike-thin" d="M44 198 L356 198" />
     </g>
   );
