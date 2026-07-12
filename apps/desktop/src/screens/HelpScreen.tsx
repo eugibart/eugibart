@@ -15,6 +15,7 @@ const SECTIONS = [
   { id: "help-what", title: "What MotoDiag is" },
   { id: "help-expect", title: "What to expect (read this first)" },
   { id: "help-need", title: "What you need" },
+  { id: "help-hardware", title: "Recommended hardware — what to buy" },
   { id: "help-connect", title: "Connect — garage, wizard & troubleshooting" },
   { id: "help-dashboard", title: "Dashboard — live data, specs & charging test" },
   { id: "help-dtcs", title: "Fault codes" },
@@ -149,7 +150,70 @@ export default function HelpScreen() {
         <Expect>
           <p>
             Nothing to buy to evaluate the app: pick the built-in simulator on the Connect
-            tab and every feature below is fully usable.
+            tab and every feature below is fully usable. When you are ready to buy, the{" "}
+            <a className="help-jump" href="#help-hardware">
+              Recommended hardware
+            </a>{" "}
+            section names exact models and the traps to avoid.
+          </p>
+        </Expect>
+      </section>
+
+      <section aria-labelledby="help-hardware">
+        <h3 id="help-hardware" tabIndex={-1}>
+          Recommended hardware — what to buy
+        </h3>
+        <p>
+          Concrete, community-proven choices. None of these are affiliate recommendations —
+          they are what the JPDiag/GuzziDiag communities have used on Marelli IAW ECUs for
+          years, and what MotoDiag is developed against.
+        </p>
+        <ul className="help-list">
+          <li>
+            <strong>K-line cable: an FTDI-chip “KKL / VAG-COM 409.1” USB interface
+            (~€15–25).</strong> The chip is the whole game — insist on a genuine{" "}
+            <em>FTDI FT232RL</em> from a reputable seller (Lonelec’s KKL cable and the OBD
+            Innovations FT232RL KKL are known-good). Avoid CH340/CH341 and PL2303 clones:
+            their break-signal and bit timing are unreliable for K-line init, and they are
+            the single biggest cause of “it won’t connect”. On a Mac no driver install is
+            needed — the cable simply appears in the port list as{" "}
+            <em>usbserial-…</em>.
+          </li>
+          <li>
+            <strong>Bike-side adapter (the MV has no OBD-II socket).</strong> The
+            diagnostic connector is a small 3-pin plug (under the tank on Brutales, under
+            the seat on some bikes) and only three wires matter: K-line to OBD pin 7, +12 V
+            to pin 16, ground to pin 4. Buy a FIAT-style 3-pin adapter kit (Lonelec’s
+            “GuzziDiag 3-pin interface cable kit” fits the same Italian-bike connector
+            family — confirm MV fitment when ordering), or crimp your own AMP Superseal
+            3-pin plug onto the KKL cable’s OBD pins.
+          </li>
+          <li>
+            <strong>For throttle-body sync: the open-hardware vacuum gauge (~€50 in
+            parts).</strong> An Arduino, an ADS1115 analog-to-digital board, and four
+            MPX4250AP pressure sensors — the full parts list, wiring diagram, and
+            ready-to-flash firmware ship with the project (docs/VACUOMETRO.md). Any
+            commercial 4-column digital vacuometer works for the mechanical job too; only
+            the open-hardware build streams into the Sync tab’s live display.
+          </li>
+          <li>
+            <strong>Optional bench kit for the curious (~€40):</strong> a 12 V bench power
+            supply, an L9637D K-line transceiver breakout, and a cheap 8-channel logic
+            analyzer. Lets you exercise cable and timing on the desk before ever touching
+            the bike — entirely optional.
+          </li>
+          <li>
+            <strong>Do not buy a CAN adapter (OBDLink, ELM327, CANable) for MotoDiag
+            yet.</strong> The app cannot talk to CAN-bus bikes today — the catalog marks
+            those models as unsupported, and no adapter changes that.
+          </li>
+        </ul>
+        <Expect>
+          <p>
+            Counterfeit “FTDI” cables exist; buying from a reputable specialist beats the
+            cheapest listing. And before the very first connection to the bike, verify the
+            connector pinout with a multimeter against the workshop manual’s wiring diagram
+            — thirty seconds of checking protects the ECU from a miswired +12&nbsp;V.
           </p>
         </Expect>
       </section>
