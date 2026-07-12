@@ -259,7 +259,7 @@ key = "tps_reset"
 name = "Throttle position (TPS) reset"
 description = "Re-learn the closed-throttle position. Engine must be off, throttle fully closed."
 procedure = [
-    "On the 5SM the TPS reset is SOFTWARE-ONLY — do not set the sensor by hand with a multimeter; the manual 150 mV setup applies to the earlier 1.6M-ECU bikes (per mvfaq.blogspot.com, mvagusta.net)",
+    "On the 5SM the TPS reset is SOFTWARE-ONLY — do not set the sensor by hand with a multimeter; the manual 150 mV baseline procedure (loosen the two TPS screws, rotate for a repeatable 147-152 mV with the throttle snapped shut) is real, correct workshop practice on Weber-Marelli throttle bodies, but it applies to the earlier physical-EPROM 1.6M-generation ECU, not this software-mapped 5SM (per mvfaq.blogspot.com; corroborated by a community tuner report — pending a stable link to cite it directly)",
     "Warm the engine to operating temperature, then switch it off (key on, engine off for the reset itself)",
     "Confirm the throttle is fully closed and the cable has correct freeplay — do not touch the throttle during the reset",
     "Run this routine and wait for the ECU to confirm completion",
@@ -306,9 +306,9 @@ key = "co_trim"
 name = "CO trim adjustment"
 description = "Adjust idle CO trim. Persisted by the ECU — follow the workshop procedure."
 procedure = [
-    "The 5SM has NO physical CO trimmer — CO is a software fuel trim set via diagnostics; the trimmer/dashpot belongs to the earlier 1.6M ECU (per mvfaq.blogspot.com). Community CO target: 3.5 ±0.5% at idle",
+    "The 5SM has NO physical CO trimmer — CO is a software fuel trim set via diagnostics; the trimmer/dashpot belongs to the earlier 1.6M ECU (per mvfaq.blogspot.com; independently corroborated by a community tuner report on the same 1.6M/5SM split — pending a stable link). Community CO target: 3.5%, accept 3-4% at idle (two independent community sources agree on this exact figure)",
     "Sync the throttle bodies FIRST (Sync tab, vacuometro) — CO trim on unbalanced bodies chases a moving target. Air-bleed screws interact: opening one changes CO and idle together",
-    "Warm the engine fully; idle should already be within its RPM spec (see the rpm channel) before touching CO",
+    "Warm the engine fully; idle should already be within its RPM spec (see the rpm channel) before touching CO — MV's own convention is to check with the radiator thermo fans actually running (~100°C+), not just 'warm', a stricter bar than most manufacturers' 65°C",
     "Connect an exhaust gas analyzer if available — this routine adjusts ECU trim, it does not measure exhaust CO itself",
     "Run this routine in small increments, re-checking idle RPM and analyzer reading between each",
     "Re-verify sync hasn't drifted after the adjustment; recheck fault codes afterward",
@@ -324,4 +324,4 @@ verified = false
 [routines.preconditions]
 min_battery_v = 12.0
 max_battery_v = 14.8
-notes = "Engine at operating temperature, exhaust gas analyzer recommended."
+notes = "Engine at operating temperature with the radiator fans running (~100°C+), exhaust gas analyzer recommended."
