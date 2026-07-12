@@ -130,8 +130,11 @@ touches one of these behaviours, re-check the criterion it implements.
   background, dropping ok/danger badge text below 4.5:1 — fixed with the
   dedicated `--ok-on-tint`/`--danger-on-tint` tokens.
 - **Behavioural (scripted)**: sparkline focus + Arrow-key sample inspection,
-  live-region echo, and Escape dismissal of both keyboard- and
-  pointer-opened tooltips.
+  live-region echo, Escape dismissal of both keyboard- and pointer-opened
+  tooltips, the copy-path button announcing its "Copied" state inside a
+  `role="status"` box, the battery gauge's neutral (never falsely red)
+  out-of-check-band state, and the visually-marked out-of-balance cylinder
+  carrying a visually-hidden text equivalent.
 - **Manual**: contrast ratios for every ink/surface pair computed from the
   token values (WCAG relative-luminance formula), including alpha-composited
   tinted backgrounds.

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { compareSnapshots, useSnapshots } from "./snapshots";
+import { formatDelta, formatValue } from "./format";
 
 /**
  * Before/after comparison of two session snapshots — the evidence view for
@@ -18,9 +19,7 @@ export default function ComparePanel() {
   const describe = (s: (typeof snapshots)[number]) =>
     `${s.label} — ${new Date(s.atMs).toLocaleTimeString()}${s.profileName ? ` (${s.profileName})` : ""}`;
 
-  const fmt = (v: number | null) => (v === null ? "—" : v.toFixed(2));
-  const fmtDelta = (v: number | null) =>
-    v === null ? "—" : `${v >= 0 ? "+" : ""}${v.toFixed(2)}`;
+  const fmt = (v: number | null) => (v === null ? "—" : formatValue(v));
 
   if (snapshots.length === 0) {
     return (
@@ -72,21 +71,35 @@ export default function ComparePanel() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.label}>
-                  <td>{row.label}</td>
-                  <td className="mono">{fmt(row.a)}</td>
-                  <td className="mono">{fmt(row.b)}</td>
-                  <td className="mono">{fmtDelta(row.delta)}</td>
-                  <td className="muted">{row.unit}</td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const delta = formatDelta(row.delta);
+                const changed = delta !== "—";
+                // Direction is only meaningful where the metric has a "good"
+                // direction: vacuum spread shrinking = a better sync.
+                const directed =
+                  row.label === "Vacuum spread" && changed && row.delta !== null
+                    ? row.delta < 0
+                      ? "delta-good"
+                      : "delta-bad"
+                    : "";
+                return (
+                  <tr key={row.label}>
+                    <td>{row.label}</td>
+                    <td className="mono">{fmt(row.a)}</td>
+                    <td className="mono">{fmt(row.b)}</td>
+                    <td className={`mono ${changed ? "delta-changed" : "delta-none"} ${directed}`}>
+                      {delta}
+                    </td>
+                    <td className="muted">{row.unit}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      <details>
+      <details className="section-disclosure">
         <summary>Manage snapshots ({snapshots.length}/{max})</summary>
         <ul className="snapshot-list">
           {snapshots.map((s) => (

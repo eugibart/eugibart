@@ -41,21 +41,35 @@ export default function SpecOverridesEditor({
 
   return (
     <div className="overrides-editor">
+      {/* Visible column headers; each input keeps its own visually-hidden
+          label, so this row is decoration for sighted scanning only. */}
+      <div className="override-row override-header" aria-hidden="true">
+        <span>Channel</span>
+        <span>Min</span>
+        <span>Max</span>
+        <span>Target</span>
+        <span>Where it came from</span>
+        <span />
+      </div>
       {definition.channels.map((c) => {
         const ov = profile.specOverrides[c.key];
         const resolved = resolvedSpecs[c.key];
         const unitLabel = c.unit ? ` (${c.unit})` : "";
         return (
           <div className="override-row" key={c.key}>
-            <span className="override-channel">{c.name}</span>
+            <span className="override-channel">
+              {c.name}
+              {c.unit && <span className="muted small"> ({c.unit})</span>}
+            </span>
 
             <label className="visually-hidden" htmlFor={`ov-min-${c.key}`}>
               {c.name} minimum{unitLabel}
             </label>
             <input
               id={`ov-min-${c.key}`}
+              className="override-num"
               type="number"
-              placeholder={resolved?.min?.toString() ?? "min"}
+              placeholder={resolved?.min?.toString() ?? "—"}
               value={ov?.min ?? ""}
               onChange={(e) => setOverride(c.key, { min: numOrNull(e.target.value) })}
             />
@@ -65,8 +79,9 @@ export default function SpecOverridesEditor({
             </label>
             <input
               id={`ov-max-${c.key}`}
+              className="override-num"
               type="number"
-              placeholder={resolved?.max?.toString() ?? "max"}
+              placeholder={resolved?.max?.toString() ?? "—"}
               value={ov?.max ?? ""}
               onChange={(e) => setOverride(c.key, { max: numOrNull(e.target.value) })}
             />
@@ -76,8 +91,9 @@ export default function SpecOverridesEditor({
             </label>
             <input
               id={`ov-target-${c.key}`}
+              className="override-num"
               type="number"
-              placeholder={resolved?.target?.toString() ?? "target"}
+              placeholder={resolved?.target?.toString() ?? "—"}
               value={ov?.target ?? ""}
               onChange={(e) => setOverride(c.key, { target: numOrNull(e.target.value) })}
             />
@@ -92,7 +108,7 @@ export default function SpecOverridesEditor({
               onChange={(e) => setOverride(c.key, { note: e.target.value })}
             />
 
-            {ov && (
+            {ov ? (
               <button
                 className="btn btn-small"
                 onClick={() => clearOverride(c.key)}
@@ -100,6 +116,8 @@ export default function SpecOverridesEditor({
               >
                 Clear
               </button>
+            ) : (
+              <span />
             )}
           </div>
         );

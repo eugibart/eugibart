@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { CatalogBikeInfo, DefinitionInfo } from "../../ipc";
 import { brandsIn, modelsFor, yearBounds } from "./catalogHelpers";
+import WizardFooter from "./WizardFooter";
 
 export interface BikeSelection {
   brand: string;
@@ -16,12 +17,14 @@ export default function StepBike({
   value,
   onChange,
   onNext,
+  onCancel,
 }: {
   catalog: CatalogBikeInfo[];
   definitions: DefinitionInfo[];
   value: BikeSelection;
   onChange: (v: BikeSelection) => void;
   onNext: () => void;
+  onCancel: () => void;
 }) {
   const [manualPick, setManualPick] = useState(false);
 
@@ -161,11 +164,11 @@ export default function StepBike({
         </div>
       )}
 
-      <div className="btn-row">
+      <WizardFooter onCancel={onCancel}>
         <button className="btn btn-primary" onClick={onNext} disabled={!canProceed}>
           Next
         </button>
-      </div>
+      </WizardFooter>
     </div>
   );
 }

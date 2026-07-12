@@ -91,8 +91,22 @@ export default function BikeWizard({
     onSave(profile, alsoConnect);
   };
 
+  const stepIndex = { bike: 0, mods: 1, summary: 2 }[step];
+
   return (
     <div className="wizard" ref={headingRef}>
+      {/* Decorative progress dots — the "Step n of 3" heading is the
+          accessible name for the same information. */}
+      <div className="wizard-stepper" aria-hidden="true">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            className={`wizard-dot ${
+              i === stepIndex ? "wizard-dot-active" : i < stepIndex ? "wizard-dot-done" : ""
+            }`}
+          />
+        ))}
+      </div>
       {step === "bike" && (
         <StepBike
           catalog={catalog}
@@ -100,6 +114,7 @@ export default function BikeWizard({
           value={selection}
           onChange={setSelection}
           onNext={() => setStep("mods")}
+          onCancel={onCancel}
         />
       )}
       {step === "mods" && (
@@ -108,6 +123,7 @@ export default function BikeWizard({
           onChange={setMods}
           onNext={() => setStep("summary")}
           onBack={() => setStep("bike")}
+          onCancel={onCancel}
         />
       )}
       {step === "summary" && (
@@ -120,14 +136,10 @@ export default function BikeWizard({
           guidance={guidance}
           onBack={() => setStep("mods")}
           onSave={save}
+          onCancel={onCancel}
           busy={busy}
         />
       )}
-      <p className="muted small">
-        <button className="btn btn-small" onClick={onCancel}>
-          Cancel
-        </button>
-      </p>
     </div>
   );
 }

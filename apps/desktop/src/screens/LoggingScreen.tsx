@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, BikeReportInfo, TraceReport, WireTraceInfo } from "../ipc";
 import { BikeProfile, describeMods } from "../garage";
 import { resolveSpecs } from "../specResolution";
+import PathBox from "../PathBox";
 
 export default function LoggingScreen({ activeProfile }: { activeProfile: BikeProfile | null }) {
   const [logPath, setLogPath] = useState<string | null>(null);
@@ -115,9 +116,7 @@ export default function LoggingScreen({ activeProfile }: { activeProfile: BikePr
 
       {logPath ? (
         <>
-          <p className="ok-box" role="status">
-            Recording live data to <span className="mono">{logPath}</span>
-          </p>
+          <PathBox path={logPath}>Recording live data to</PathBox>
           <p className="muted small">
             Keep the Dashboard tab polling (or leave this recording) — every polled reading is
             appended as a CSV row.
@@ -144,11 +143,7 @@ export default function LoggingScreen({ activeProfile }: { activeProfile: BikePr
         as a single HTML file you can keep, print, or send to a mechanic or a seller.
         Handy for pre-purchase inspections.
       </p>
-      {reportPath && (
-        <p className="ok-box" role="status">
-          Report saved to <span className="mono">{reportPath}</span>
-        </p>
-      )}
+      {reportPath && <PathBox path={reportPath}>Report saved to</PathBox>}
       <button className="btn btn-primary" onClick={exportReport} disabled={exporting}>
         {exporting ? "Reading ECU…" : "Export health report"}
       </button>
@@ -170,10 +165,12 @@ export default function LoggingScreen({ activeProfile }: { activeProfile: BikePr
         </button>
       </div>
       {trace && (
-        <p className="ok-box" role="status">
-          Recording to <span className="mono">{trace.path}</span> — {trace.event_count} events
-          so far. Share this file to help verify the definition.
-        </p>
+        <PathBox
+          path={trace.path}
+          suffix={` — ${trace.event_count} events so far. Share this file to help verify the definition.`}
+        >
+          Recording to
+        </PathBox>
       )}
 
       <h3 className="section-gap">Analyze a shared trace</h3>
@@ -246,7 +243,7 @@ export default function LoggingScreen({ activeProfile }: { activeProfile: BikePr
               </tbody>
             </table>
           )}
-          <details>
+          <details className="section-disclosure">
             <summary>
               Exchange log ({traceReport.rows.length}
               {traceReport.rows_truncated ? ", truncated" : ""})

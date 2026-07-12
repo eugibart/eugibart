@@ -204,28 +204,51 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
                   : status.spread_kpa < SPREAD_OK
                     ? " — close, keep going"
                     : " — unbalanced"}
+                <span className="sync-spread-goal">
+                  balanced when spread &lt; {SPREAD_GOOD.toFixed(1)} kPa
+                </span>
               </div>
 
               <div className="sync-bars">
-                {status.channels_kpa.map((kpa, i) => {
-                  const pct = Math.min(
-                    100,
-                    Math.max(4, ((kpa - KPA_MIN) / (KPA_MAX - KPA_MIN)) * 100),
-                  );
-                  const delta = status.deltas_kpa[i] ?? 0;
-                  return (
-                    <div className="sync-cyl" key={i}>
-                      <div className="sync-bar-track">
-                        <div className="sync-bar-fill" style={{ height: `${pct}%` }} />
+                {(() => {
+                  // Mark the cylinder(s) actually breaking the balance: the
+                  // furthest from the mean, only once the spread says
+                  // something is wrong. Deltas are shown vs cyl 1, but the
+                  // odd one out is measured from the mean — otherwise the
+                  // reference cylinder could never be the culprit.
+                  const mean =
+                    status.channels_kpa.reduce((s, v) => s + v, 0) /
+                    Math.max(1, status.channels_kpa.length);
+                  const devs = status.channels_kpa.map((v) => Math.abs(v - mean));
+                  const maxDev = Math.max(...devs);
+                  const unbalanced = status.spread_kpa >= SPREAD_OK;
+                  return status.channels_kpa.map((kpa, i) => {
+                    const pct = Math.min(
+                      100,
+                      Math.max(4, ((kpa - KPA_MIN) / (KPA_MAX - KPA_MIN)) * 100),
+                    );
+                    const delta = status.deltas_kpa[i] ?? 0;
+                    const offender = unbalanced && maxDev > 0 && devs[i] >= maxDev * 0.9;
+                    return (
+                      <div className="sync-cyl" key={i}>
+                        <div className="sync-bar-track">
+                          <div
+                            className={`sync-bar-fill ${offender ? "sync-bar-fill-off" : ""}`}
+                            style={{ height: `${pct}%` }}
+                          />
+                        </div>
+                        <div className="sync-kpa mono">{kpa.toFixed(1)}</div>
+                        <div className={`sync-delta mono ${offender ? "sync-delta-off" : ""}`}>
+                          {i === 0 ? "ref" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`}
+                        </div>
+                        <div className="sync-label">
+                          Cyl {i + 1}
+                          {offender && <span className="visually-hidden"> — furthest out</span>}
+                        </div>
                       </div>
-                      <div className="sync-kpa mono">{kpa.toFixed(1)}</div>
-                      <div className="sync-delta mono">
-                        {i === 0 ? "ref" : `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}`}
-                      </div>
-                      <div className="sync-label">Cyl {i + 1}</div>
-                    </div>
-                  );
-                })}
+                    );
+                  });
+                })()}
               </div>
               <p className="muted small">kPa absolute — lower bar = stronger vacuum.</p>
             </>

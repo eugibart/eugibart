@@ -179,6 +179,7 @@ body {
   justify-content: space-between;
   flex-wrap: wrap; /* reflow as whole blocks at narrow widths (1.4.10) */
   row-gap: 6px;
+  column-gap: 18px;
   padding: 10px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-panel);
@@ -515,6 +516,30 @@ textarea { resize: vertical; }
 }
 .gauge-unit { font-size: 13.5px; color: var(--text-muted); margin-left: 6px; font-weight: 400; }
 
+/* Live numbers keep a constant width per digit so 500 ms updates don't
+   make values (and everything after them) wobble. */
+.gauge-value,
+.sync-kpa,
+.sync-rpm,
+.sync-delta,
+.compare-scroll table,
+.charging-panel table,
+.spark-tip {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Fixed-min-height meta slot: keeps sparklines vertically aligned across a
+   row even when neighbouring tiles have no spec/status to show. */
+.gauge-meta { min-height: 44px; display: flex; flex-direction: column; gap: 2px; }
+.gauge-condition { font-size: 12px; color: var(--text-muted); }
+.gauge-status-deferred { color: var(--text-muted); }
+.gauge-citation .badge { margin-right: 8px; }
+
+.delta-none { color: var(--text-faint); }
+.delta-changed { font-weight: 650; }
+.delta-good { color: var(--ok-on-tint); }
+.delta-bad { color: var(--danger-on-tint); }
+
 .gauge-status {
   display: inline-flex;
   align-items: center;
@@ -730,4 +755,131 @@ textarea { resize: vertical; }
   letter-spacing: 0.6px;
   color: var(--text-muted);
   margin-bottom: 2px;
+}
+
+/* ---------- UX polish pass ---------- */
+
+/* Topbar: long connection strings truncate instead of wrapping the whole
+   status block onto a second row (full text stays in the title attribute). */
+.conn-text-truncate {
+  max-width: 34ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Wizard: progress dots (decorative — the step heading is the accessible
+   name) and one shared footer layout for every step. */
+.wizard-stepper { display: flex; gap: 8px; margin: 4px 0 14px; }
+.wizard-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+.wizard-dot-active { background: var(--accent-solid); }
+.wizard-dot-done { background: var(--text-muted); }
+.wizard-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.wizard-footer-spacer { flex: 1; }
+
+/* Connect: empty-garage state and the Help cross-link. */
+.empty-garage { max-width: 460px; margin: 0; text-align: left; padding: 22px 0 10px; }
+.empty-garage .glyph { font-size: 30px; }
+.empty-garage p { margin: 8px 0 14px; }
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: inherit;
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link-button:hover { color: var(--text); }
+
+/* "Your targets" editor: a real grid with visible column headers. */
+.overrides-editor { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.override-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.3fr) 88px 88px 88px minmax(150px, 1.7fr) 64px;
+  gap: 8px;
+  align-items: center;
+}
+.override-row input { min-width: 0; width: 100%; }
+.override-row .override-num { text-align: right; font-variant-numeric: tabular-nums; }
+.override-header {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+}
+.override-channel { font-size: 13.5px; }
+@media (max-width: 760px) {
+  .override-row { grid-template-columns: repeat(3, 1fr); }
+  .override-header { display: none; } /* headers stop matching; inputs keep their labels */
+}
+
+/* Sync: use the panel width, and paint the cylinder breaking the balance. */
+.sync-bars { flex: 1; justify-content: space-evenly; width: 100%; }
+.sync-bar-track { width: min(72px, 14vw); }
+.sync-bar-fill-off { background: linear-gradient(180deg, var(--danger), var(--danger)); }
+.sync-delta-off { color: var(--danger-on-tint); font-weight: 650; }
+.sync-spread-goal {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* File paths with copy/reveal actions. */
+.path-box { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.path-box-text { flex: 1; min-width: 240px; overflow-wrap: anywhere; }
+.path-box-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Collapsed sections that read as sections, not stray text lines. */
+.section-disclosure > summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14.5px;
+  padding: 10px 2px;
+  border-top: 1px solid var(--border);
+  list-style-position: inside;
+}
+.section-disclosure > summary:hover { color: var(--text); background: var(--bg-hover); }
+.section-disclosure[open] > summary { border-bottom: 1px dashed var(--border); margin-bottom: 10px; }
+
+/* Service: routine action anchored to a card footer. */
+.routine-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+/* Help: table of contents becomes a sticky sidebar on wide windows. */
+@media (min-width: 1280px) {
+  .help { display: grid; grid-template-columns: 260px 1fr; column-gap: 32px; }
+  .help > h2 { grid-column: 1 / -1; }
+  .help-toc {
+    grid-column: 1;
+    grid-row: 2 / span 24;
+    align-self: start;
+    position: sticky;
+    top: 8px;
+  }
+  .help-toc ul { grid-template-columns: 1fr; }
+  .help section { grid-column: 2; }
 }

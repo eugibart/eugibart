@@ -20,7 +20,10 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   what to physically check, not just a hex code
 - **Reference specs & procedures** — live-data gauges show a "normal range"
   badge when a spec exists, and service routines carry a full step-by-step
-  procedure, not just a one-line description (see the MV model-coverage
+  procedure, not just a one-line description. Ranges are **condition-aware**:
+  a charging-voltage minimum that only applies "at ~2000 rpm" is never
+  painted red while the bike idles — the gauge says when the spec applies
+  and points at the guided charging test instead of crying wolf (see the MV model-coverage
   table in [docs/PROTOCOL.md](docs/PROTOCOL.md) for exactly which models
   this applies to today)
 - **"Tell me about your bike" wizard & garage** — describe your bike (brand,

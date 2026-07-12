@@ -111,14 +111,18 @@ export default function ServiceScreen({
               </>
             )}
             {r.procedure.length > 0 && (
-              <>
-                <span className="routine-subhead">Procedure</span>
+              // Collapsed by default so the routine list scans; preconditions
+              // stay always-visible above because they gate safety.
+              <details className="section-disclosure">
+                <summary>
+                  Procedure — {r.procedure.length} step{r.procedure.length === 1 ? "" : "s"}
+                </summary>
                 <ol className="pre-list">
                   {r.procedure.map((step, i) => (
                     <li key={i}>{step}</li>
                   ))}
                 </ol>
-              </>
+              </details>
             )}
             {applicableProcedureNotes(connection.definition_id, guidance, activeProfile, r.key).map(
               (n, i) => (
@@ -131,18 +135,20 @@ export default function ServiceScreen({
                 </div>
               ),
             )}
-            <button
-              className="btn"
-              disabled={!connection.service_mode || busy}
-              onClick={() => {
-                setConfirmKey(r.key);
-                setConfirmText("");
-                setResult(null);
-                setError(null);
-              }}
-            >
-              Run…
-            </button>
+            <div className="routine-footer">
+              <button
+                className="btn"
+                disabled={!connection.service_mode || busy}
+                onClick={() => {
+                  setConfirmKey(r.key);
+                  setConfirmText("");
+                  setResult(null);
+                  setError(null);
+                }}
+              >
+                Run…
+              </button>
+            </div>
           </div>
         ))}
       </div>

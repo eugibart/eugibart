@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api, Dtc, ModGuidanceInfo } from "../ipc";
 import { BikeProfile } from "../garage";
 import { applicableDtcNotes } from "../specResolution";
+import { splitPlaceholder } from "../dtcDisplay";
 import SourceLink from "../SourceLink";
 
 export default function DtcScreen({
@@ -89,7 +90,24 @@ export default function DtcScreen({
                     {d.code.toString(16).toUpperCase().padStart(4, "0")}
                   </span>
                   <span className="dtc-desc">
-                    {d.description ?? <span className="muted">unknown code</span>}
+                    {d.description ? (
+                      (() => {
+                        const { text, placeholder } = splitPlaceholder(d.description);
+                        return (
+                          <>
+                            {text}
+                            {placeholder && (
+                              <>
+                                {" "}
+                                <span className="badge badge-warn">unverified</span>
+                              </>
+                            )}
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <span className="muted">unknown code</span>
+                    )}
                   </span>
                   <span className="mono muted small">
                     status 0x{d.status.toString(16).toUpperCase().padStart(2, "0")}

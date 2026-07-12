@@ -133,11 +133,14 @@ export default function App() {
                 className={`dot ${connection.simulated ? "dot-sim" : "dot-live"}`}
                 aria-hidden="true"
               />
-              <span className="conn-text">
+              <span
+                className="conn-text conn-text-truncate"
+                title={`Connected: ${activeProfile ? `${activeProfile.name} — ` : ""}${connection.definition_name}${connection.simulated ? " (simulator)" : ""}`}
+              >
                 Connected: {activeProfile ? `${activeProfile.name} — ` : ""}
                 {connection.definition_name}
-                {connection.simulated ? " (simulator)" : ""}
               </span>
+              {connection.simulated && <span className="badge badge-warn">sim</span>}
               {connection.service_mode && (
                 <span className="badge badge-warn">service mode</span>
               )}
@@ -187,7 +190,9 @@ export default function App() {
       </nav>
 
       <main className="content" id="main" tabIndex={-1}>
-        {tab === "connect" && <ConnectScreen onConnected={handleConnected} />}
+        {tab === "connect" && (
+          <ConnectScreen onConnected={handleConnected} onShowHelp={() => setTab("help")} />
+        )}
         {tab === "dashboard" && connection && (
           <DashboardScreen connection={connection} activeProfile={activeProfile} />
         )}

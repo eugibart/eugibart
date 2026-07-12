@@ -1,15 +1,18 @@
 import { BikeMods, STOCK_MODS } from "../../garage";
+import WizardFooter from "./WizardFooter";
 
 export default function StepMods({
   value,
   onChange,
   onNext,
   onBack,
+  onCancel,
 }: {
   value: BikeMods;
   onChange: (v: BikeMods) => void;
   onNext: () => void;
   onBack: () => void;
+  onCancel: () => void;
 }) {
   const modified = value.exhaust !== "stock" || value.eprom !== "stock" || value.airFilter !== "stock";
 
@@ -20,7 +23,7 @@ export default function StepMods({
   return (
     <div>
       <h3 tabIndex={-1} id="wizard-step-heading">
-        Step 2 of 3 — Stock or modified?
+        Step 2 of 3 — Your modifications
       </h3>
 
       <fieldset className="fieldset">
@@ -56,32 +59,36 @@ export default function StepMods({
                 ["full-system", "Full system"],
               ] as const
             ).map(([val, label]) => (
-              <label className="radio-row" key={val}>
-                <input
-                  type="radio"
-                  name="wiz-exhaust"
-                  checked={value.exhaust === val}
-                  onChange={() => onChange({ ...value, exhaust: val })}
-                />
-                {label}
-              </label>
-            ))}
-            {value.exhaust !== "stock" && (
-              <div className="radio-row-indent">
-                <span className="muted small">Material: </span>
-                {(["inox", "titanium"] as const).map((mat) => (
-                  <label className="radio-row-inline" key={mat}>
-                    <input
-                      type="radio"
-                      name="wiz-exhaust-material"
-                      checked={value.exhaustMaterial === mat}
-                      onChange={() => onChange({ ...value, exhaustMaterial: mat })}
-                    />
-                    {mat}
-                  </label>
-                ))}
+              <div key={val}>
+                <label className="radio-row">
+                  <input
+                    type="radio"
+                    name="wiz-exhaust"
+                    checked={value.exhaust === val}
+                    onChange={() => onChange({ ...value, exhaust: val })}
+                  />
+                  {label}
+                </label>
+                {/* Material belongs to the chosen exhaust — render it right
+                    under the selected option, not after the whole list. */}
+                {val !== "stock" && value.exhaust === val && (
+                  <div className="radio-row-indent">
+                    <span className="muted small">Material: </span>
+                    {(["inox", "titanium"] as const).map((mat) => (
+                      <label className="radio-row-inline" key={mat}>
+                        <input
+                          type="radio"
+                          name="wiz-exhaust-material"
+                          checked={value.exhaustMaterial === mat}
+                          onChange={() => onChange({ ...value, exhaustMaterial: mat })}
+                        />
+                        {mat}
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            ))}
           </fieldset>
 
           <fieldset className="fieldset">
@@ -138,14 +145,11 @@ export default function StepMods({
         </>
       )}
 
-      <div className="btn-row">
-        <button className="btn" onClick={onBack}>
-          Back
-        </button>
+      <WizardFooter onCancel={onCancel} onBack={onBack}>
         <button className="btn btn-primary" onClick={onNext}>
           Next
         </button>
-      </div>
+      </WizardFooter>
     </div>
   );
 }

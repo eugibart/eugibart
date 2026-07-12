@@ -14,8 +14,10 @@ import BikeWizard from "./BikeWizard";
 
 export default function ConnectScreen({
   onConnected,
+  onShowHelp,
 }: {
   onConnected: (info: ConnectionInfo, profile: BikeProfile | null) => void;
+  onShowHelp?: () => void;
 }) {
   const [definitions, setDefinitions] = useState<DefinitionInfo[]>([]);
   const [catalog, setCatalog] = useState<CatalogBikeInfo[]>([]);
@@ -103,35 +105,9 @@ export default function ConnectScreen({
     <div className="panel panel-wide">
       <h2>Connect to a bike</h2>
 
-      {!wizardOpen && (
-        <>
-          <h3>Your garage</h3>
-          <GaragePanel
-            profiles={profiles}
-            definitions={definitions}
-            busy={busy}
-            onConnect={(p) => connectWith(p.definitionId, p)}
-            onEdit={(p) => {
-              setEditingProfile(p);
-              setWizardOpen(true);
-            }}
-            onRemove={removeProfile}
-          />
-          <p className="btn-row">
-            <button
-              className="btn btn-primary"
-              onClick={() => {
-                setEditingProfile(null);
-                setWizardOpen(true);
-              }}
-            >
-              Add your bike
-            </button>
-          </p>
-        </>
-      )}
-
-      {wizardOpen && (
+      {wizardOpen ? (
+        // The wizard owns the screen: no port row, no Advanced picker, no
+        // footer competing for attention mid-flow.
         <BikeWizard
           catalog={catalog}
           definitions={definitions}
@@ -143,10 +119,68 @@ export default function ConnectScreen({
           }}
           onSave={saveProfile}
         />
-      )}
+      ) : (
+        <>
+          <h3>Your garage</h3>
+          {profiles.length === 0 ? (
+            <div className="empty-state empty-garage">
+              <span className="glyph" aria-hidden="true">
+                🏍
+              </span>
+              <p>
+                Tell MotoDiag about your bike once — model, year, modifications — and
+                reconnecting becomes one click, with reference figures matched to your setup.
+              </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setEditingProfile(null);
+                  setWizardOpen(true);
+                }}
+              >
+                Add your bike
+              </button>
+              {onShowHelp && (
+                <p className="muted small">
+                  New here?{" "}
+                  <button className="link-button" onClick={onShowHelp}>
+                    The Help tab explains what the app does and what to expect.
+                  </button>
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <GaragePanel
+                profiles={profiles}
+                definitions={definitions}
+                busy={busy}
+                onConnect={(p) => connectWith(p.definitionId, p)}
+                onEdit={(p) => {
+                  setEditingProfile(p);
+                  setWizardOpen(true);
+                }}
+                onRemove={removeProfile}
+              />
+              <p className="btn-row">
+                {/* Secondary once bikes exist: the garage cards' Connect is
+                    this screen's primary action. */}
+                <button
+                  className="btn"
+                  onClick={() => {
+                    setEditingProfile(null);
+                    setWizardOpen(true);
+                  }}
+                >
+                  Add your bike
+                </button>
+              </p>
+            </>
+          )}
 
-      <div className="form-row section-gap">
-        <label htmlFor="connect-port">Port</label>
+          <h3 className="section-gap">Connection</h3>
+          <div className="form-row">
+            <label htmlFor="connect-port">Port</label>
         <select id="connect-port" value={port} onChange={(e) => setPort(e.target.value)}>
           {ports.map((p) => (
             <option key={p} value={p}>
@@ -253,10 +287,12 @@ export default function ConnectScreen({
         </div>
       )}
 
-      <p className="muted small">
-        Connecting is always read-only. Service operations require explicitly enabling service
-        mode after connecting.
-      </p>
+          <p className="muted small">
+            Connecting is always read-only. Service operations require explicitly enabling
+            service mode after connecting.
+          </p>
+        </>
+      )}
     </div>
   );
 }

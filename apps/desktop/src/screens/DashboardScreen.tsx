@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { api, ConnectionInfo, DefinitionInfo, ModGuidanceInfo, Reading } from "../ipc";
 import { BikeProfile, useGarage } from "../garage";
 import { makeSnapshot, useSnapshots } from "../snapshots";
-import { resolveSpecs, inRange, ResolvedSpec } from "../specResolution";
+import { resolveSpecs, ResolvedSpec } from "../specResolution";
+import { judgeReading } from "../gaugeStatus";
+import { formatValue } from "../format";
 import ChargingTestPanel from "../ChargingTestPanel";
 import Sparkline from "../Sparkline";
 import SourceLink from "../SourceLink";
@@ -136,7 +138,10 @@ export default function DashboardScreen({
       <div className="gauges">
         {readings.map((r) => {
           const spec = specs[r.key] ?? null;
-          const range = spec ? inRange(spec, r.value) : null;
+          const rpm = readings.find((x) => x.key === "rpm")?.value ?? null;
+          const judgement = spec
+            ? judgeReading(r.key, r.value, spec, definition?.charging ?? null, rpm)
+            : null;
           return (
             <div className="gauge" key={r.key}>
               <div className="gauge-name">{r.name}</div>
@@ -144,21 +149,50 @@ export default function DashboardScreen({
                 {formatValue(r.value)}
                 <span className="gauge-unit">{r.unit}</span>
               </div>
-              {range !== null && spec && (
-                <div
-                  className={`gauge-status ${range ? "gauge-status-ok" : "gauge-status-bad"}`}
-                  title={spec.condition}
-                >
-                  <span aria-hidden="true">{range ? "✓" : r.value > (spec.max ?? Infinity) ? "▲" : "▼"}</span>
-                  {range ? `in range (${rangeText(spec)})` : `outside ${rangeText(spec)}`}
-                  {spec.source !== "stock" && ` — ${spec.label}`}
-                </div>
-              )}
-              {spec?.citationSite && spec.citationUrl && (
-                <div className="gauge-citation">
-                  <SourceLink site={spec.citationSite} url={spec.citationUrl} />
-                </div>
-              )}
+              {/* Fixed-min-height slot so sparklines align across a row even
+                  when a neighbouring tile has no spec to talk about. */}
+              <div className="gauge-meta">
+                {judgement && spec && judgement.kind === "deferred" && (
+                  <div className="gauge-status gauge-status-deferred" title={spec.condition}>
+                    <span aria-hidden="true">◌</span>
+                    {rangeText(spec)} applies at {judgement.bandText} — see the charging test
+                    below
+                  </div>
+                )}
+                {judgement && spec && judgement.kind !== "deferred" && (
+                  <div
+                    className={`gauge-status ${judgement.kind === "ok" ? "gauge-status-ok" : "gauge-status-bad"}`}
+                    title={spec.condition}
+                  >
+                    <span aria-hidden="true">
+                      {judgement.kind === "ok" ? "✓" : judgement.kind === "high" ? "▲" : "▼"}
+                    </span>
+                    {judgement.kind === "ok"
+                      ? `in range (${rangeText(spec)})`
+                      : `outside ${rangeText(spec)}`}
+                  </div>
+                )}
+                {spec && judgement?.kind !== "deferred" && spec.condition && (
+                  <div className="gauge-condition">{spec.condition}</div>
+                )}
+                {spec && (spec.source !== "stock" || (spec.citationSite && spec.citationUrl)) && (
+                  <div className="gauge-citation">
+                    {spec.source === "community-adjusted" && (
+                      <span className="badge badge-warn" title={spec.label}>
+                        community · unverified
+                      </span>
+                    )}
+                    {spec.source === "user-override" && (
+                      <span className="badge badge-ok" title={spec.label}>
+                        your target
+                      </span>
+                    )}
+                    {spec.citationSite && spec.citationUrl && (
+                      <SourceLink site={spec.citationSite} url={spec.citationUrl} />
+                    )}
+                  </div>
+                )}
+              </div>
               {/* Fresh copy per render: the ring buffer mutates in place, so
                   handing the same array reference down would defeat the
                   sparkline's memoization and freeze it at its first frame. */}
@@ -185,7 +219,7 @@ export default function DashboardScreen({
       )}
 
       {activeProfile && definition && (
-        <details className="section-gap">
+        <details className="section-gap section-disclosure">
           <summary>Your targets</summary>
           <p className="muted small">
             Set your own reference figures — from a tuner, a dyno sheet, or your own experience.
@@ -208,10 +242,4 @@ function rangeText(spec: ResolvedSpec): string {
   if (spec.min !== null) return `≥ ${formatValue(spec.min)}`;
   if (spec.max !== null) return `≤ ${formatValue(spec.max)}`;
   return spec.condition;
-}
-
-function formatValue(v: number): string {
-  if (Math.abs(v) >= 100) return v.toFixed(0);
-  if (Math.abs(v) >= 10) return v.toFixed(1);
-  return v.toFixed(2);
 }

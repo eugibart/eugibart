@@ -2,6 +2,7 @@ import { DefinitionInfo, ModGuidanceInfo } from "../../ipc";
 import { BikeMods, describeMods } from "../../garage";
 import { modsMatch } from "../../specResolution";
 import { BikeSelection } from "./StepBike";
+import WizardFooter from "./WizardFooter";
 
 export default function StepSummary({
   selection,
@@ -12,6 +13,7 @@ export default function StepSummary({
   guidance,
   onBack,
   onSave,
+  onCancel,
   busy,
 }: {
   selection: BikeSelection;
@@ -22,6 +24,7 @@ export default function StepSummary({
   guidance: ModGuidanceInfo | null;
   onBack: () => void;
   onSave: (alsoConnect: boolean) => void;
+  onCancel: () => void;
   busy: boolean;
 }) {
   const def = definitions.find((d) => d.id === selection.definitionId);
@@ -75,10 +78,7 @@ export default function StepSummary({
         </p>
       )}
 
-      <div className="btn-row">
-        <button className="btn" onClick={onBack} disabled={busy}>
-          Back
-        </button>
+      <WizardFooter onCancel={onCancel} onBack={onBack} busy={busy}>
         <button className="btn" onClick={() => onSave(false)} disabled={busy || !name.trim()}>
           Save to garage
         </button>
@@ -89,7 +89,7 @@ export default function StepSummary({
         >
           Save and connect
         </button>
-      </div>
+      </WizardFooter>
     </div>
   );
 }

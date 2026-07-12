@@ -130,7 +130,7 @@ export default function ChargingTestPanel({
   const v = step === "verdict" ? verdict() : null;
 
   return (
-    <details className="section-gap">
+    <details className="section-gap section-disclosure">
       <summary>Charging system test (guided)</summary>
       <div className="charging-panel">
         {step === "intro" && (
