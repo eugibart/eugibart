@@ -61,6 +61,9 @@
      on panel — computed, incl. alpha-composited tint. */
   --link: #6db1f7;
 
+  /* Faint bodywork fill for the bike access-guide diagrams (decorative). */
+  --bike-fill: rgba(154, 160, 171, 0.1);
+
   /* Shape & motion */
   --radius: 10px;
   --radius-sm: 7px;
@@ -114,6 +117,8 @@
   /* #2565b9: 5.2:1 on the warn-tinted mod-note, 5.4:1 on raised, 5.8:1
      on white — computed, incl. alpha-composited tint. */
   --link: #2565b9;
+
+  --bike-fill: rgba(87, 96, 108, 0.1);
 
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.08), 0 4px 16px rgba(16, 24, 40, 0.07);
 }
@@ -926,6 +931,23 @@ textarea { resize: vertical; }
 .bike-line {
   stroke: var(--text-muted);
   fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Secondary detail (spokes, trellis, panel seams): decorative, recedes. */
+.bike-thin {
+  stroke: var(--text-muted);
+  fill: none;
+  stroke-width: 1.3;
+  opacity: 0.55;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Bodywork panels get a faint fill so tank/tail/fairing read as solid. */
+.bike-fill {
+  fill: var(--bike-fill);
+  stroke: var(--text-muted);
   stroke-width: 2.5;
   stroke-linecap: round;
   stroke-linejoin: round;
