@@ -39,14 +39,14 @@ export const ZONE_COORDS: Record<BodyStyle, Record<AccessZone, { x: number; y: n
     "side-panel-right": { x: 186, y: 112 },
   },
   faired: {
-    "under-seat": { x: 152, y: 98 },
-    "under-tank-left": { x: 218, y: 100 },
-    "under-tank-right": { x: 218, y: 100 },
-    "under-tank-center": { x: 230, y: 96 },
-    "tail-section": { x: 124, y: 86 },
-    "dash-area": { x: 258, y: 54 },
-    "side-panel-left": { x: 272, y: 112 },
-    "side-panel-right": { x: 272, y: 112 },
+    "under-seat": { x: 162, y: 82 },
+    "under-tank-left": { x: 215, y: 92 },
+    "under-tank-right": { x: 215, y: 92 },
+    "under-tank-center": { x: 228, y: 90 },
+    "tail-section": { x: 90, y: 55 },
+    "dash-area": { x: 268, y: 46 },
+    "side-panel-left": { x: 266, y: 122 },
+    "side-panel-right": { x: 266, y: 122 },
   },
 };
 
@@ -140,53 +140,54 @@ function NakedSilhouette() {
   );
 }
 
+/* Proportions measured from a reference photo of an F4 1000 (wheelbase-
+   normalized): level tank flowing into the long, high tail that overhangs
+   the rear wheel, tall far-forward screen, deep lower fairing with the
+   red/silver seam, organ-pipe tips at the very rear of the tail. */
 function FairedSilhouette() {
   return (
     <g>
       <Wheel cx={312} />
       <Wheel cx={88} />
-      {/* fork visible below the fairing + fender */}
+      {/* fork visible below the nose + front fender */}
       <g className="bike-line">
-        <path d="M313 152 L303 114" />
-        <path d="M306 150 L296 112" />
+        <path d="M313 152 L305 118" />
+        <path d="M306 150 L298 116" />
         <path d="M287 125 Q312 98 337 125" />
       </g>
-      {/* body: nose fairing over the fender, belly pan, rear cut, tank top */}
+      {/* upper body: tank -> saddle -> tail overhanging the rear wheel */}
       <path
         className="bike-fill"
-        d="M268 56 C288 60 306 74 318 90 C322 96 320 102 314 104 C306 122 292 138 274 146 C258 152 242 152 232 148 L236 116 C232 106 220 100 197 96 C222 88 238 76 250 63 L268 56 Z"
+        d="M272 52 C252 59 216 56 198 55 C190 57 186 60 182 63 C174 71 166 73 158 73 C142 66 126 54 110 46 L64 43 C56 44 54 48 57 53 L61 63 C76 64 94 66 112 68 C128 71 140 76 150 80 C162 85 172 87 180 88 C202 91 224 89 242 84 C254 79 264 64 272 52 Z"
       />
-      {/* windscreen */}
-      <path className="bike-fill" d="M267 57 L252 41 C256 51 260 58 266 62 Z" />
-      {/* headlight slit, intake, fairing/tank seam */}
-      <g className="bike-thin">
-        <path d="M303 78 C310 85 315 92 317 97" />
-        <path d="M276 70 L292 80" />
-        <path d="M262 60 C252 78 244 98 239 122" />
-      </g>
-      {/* seat + tall tail with the four underseat organ pipes */}
+      {/* fairing: nose with headlight face, low belly, vertical rear cut */}
       <path
         className="bike-fill"
-        d="M200 95 C182 97 164 96 152 94 C140 92 128 86 120 76 L128 95 C137 102 152 104 164 102 L195 101 Z"
+        d="M272 52 L316 50 C326 56 332 74 330 90 C328 98 322 102 316 102 C300 122 278 142 256 154 C236 163 214 166 198 163 L196 104 C210 96 232 90 244 84 C254 78 264 62 272 52 Z"
       />
+      {/* windscreen: tall, far forward */}
+      <path className="bike-fill" d="M290 28 C300 36 310 43 318 49 L272 53 C277 43 283 34 290 28 Z" />
+      {/* headlight slit + fairing/tank seam */}
       <g className="bike-thin">
-        <circle cx="131" cy="84" r="3.2" />
-        <circle cx="138" cy="87" r="3.2" />
-        <circle cx="129" cy="91" r="3.2" />
-        <circle cx="136" cy="94" r="3.2" />
+        <path d="M320 58 C326 68 329 80 328 90" />
+        <path d="M300 76 C282 96 258 122 240 146" />
       </g>
-      {/* clip-on */}
-      <path className="bike-thin" d="M272 62 L283 58" />
-      {/* engine visible in the rear cutout */}
-      <g className="bike-line">
-        <rect x="202" y="116" width="32" height="30" rx="6" />
-        <path d="M232 148 C220 154 204 155 192 150 L182 142" />
+      {/* organ pipes exiting the tail rear */}
+      <path className="bike-line" d="M62 57 L50 56 M62 63 L50 62" />
+      <g className="bike-thin">
+        <circle cx="49" cy="56" r="2.4" />
+        <circle cx="49" cy="62" r="2.4" />
       </g>
-      <circle className="bike-thin" cx="212" cy="136" r="7" />
-      {/* frame glimpse between fairing and seat */}
-      <path className="bike-thin" d="M222 96 L204 116 M212 100 L220 114" />
+      {/* rear hugger */}
+      <path className="bike-thin" d="M66 126 Q88 110 110 124" />
+      {/* engine cases in the cutout behind the fairing */}
+      <rect className="bike-line" x="158" y="100" width="40" height="36" rx="7" />
+      <g className="bike-thin">
+        <circle cx="176" cy="120" r="8" />
+        <path d="M162 108 L196 106" />
+      </g>
       {/* single-sided swingarm */}
-      <path className="bike-fill" d="M182 128 L96 147 L98 159 L184 141 Z" />
+      <path className="bike-fill" d="M158 134 L96 148 L98 160 L162 146 Z" />
       <path className="bike-thin" d="M44 198 L356 198" />
     </g>
   );
