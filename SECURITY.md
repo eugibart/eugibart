@@ -39,7 +39,7 @@ RustSec advisory database and `npm audit` on the frontend lockfile on every
 push. The frontend has three runtime dependencies (React, ReactDOM, the
 Tauri API); the Rust side avoids heavyweight transitive trees.
 
-**Distribution.** Builds are currently unsigned (open-source hobby stage).
+**Distribution.** Builds are currently unsigned (pre-release stage).
 Before any paid distribution: macOS builds must be signed + notarized,
 Windows builds signed, and releases published with checksums. Do not ship
 installers to customers before that work is done.

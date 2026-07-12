@@ -258,7 +258,7 @@ indicative, not authoritative.</div>"#,
     }
 
     html.push_str(
-        "<footer>Produced by MotoDiag, an open-source diagnostics tool for MV Agusta &amp; \
+        "<footer>Produced by MotoDiag, a diagnostics tool for MV Agusta &amp; \
          Ducati motorcycles. Readings reflect the moment of capture only.</footer>\n</body>\n</html>\n",
     );
     html
