@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { api, SIMULATOR_PORT, VacuumStatus } from "../ipc";
+import { api, DefinitionInfo, SIMULATOR_PORT, VacuumStatus } from "../ipc";
 import ComparePanel from "../ComparePanel";
+import HowToPanel from "../HowToPanel";
 import { makeSnapshot, useSnapshots } from "../snapshots";
 
 const POLL_INTERVAL_MS = 300;
@@ -36,6 +37,20 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
   const { addSnapshot } = useSnapshots();
   const [snapshotLabel, setSnapshotLabel] = useState("");
   const [snapshotSaved, setSnapshotSaved] = useState<string | null>(null);
+  // The connected bike's definition, for its vacuum-port access guide.
+  const [definition, setDefinition] = useState<DefinitionInfo | null>(null);
+
+  useEffect(() => {
+    if (!ecuConnected) {
+      setDefinition(null);
+      return;
+    }
+    Promise.all([api.connectionStatus(), api.listDefinitions()])
+      .then(([conn, defs]) =>
+        setDefinition(defs.find((d) => d.id === conn?.definition_id) ?? null),
+      )
+      .catch(() => {});
+  }, [ecuConnected]);
 
   const captureSnapshot = async () => {
     const label = snapshotLabel.trim() || "snapshot";
@@ -255,6 +270,19 @@ export default function SyncScreen({ ecuConnected }: { ecuConnected: boolean }) 
           )}
         </>
       )}
+
+      <details className="section-disclosure section-gap">
+        <summary>Where are the vacuum ports?</summary>
+        <HowToPanel
+          guide={definition?.vacuum_access ?? null}
+          bodyStyle={definition?.body_style ?? "naked"}
+          fallback={
+            ecuConnected
+              ? "We don't have a vacuum-port guide for this bike yet — the take-off ports sit on the throttle bodies; check the workshop manual before pulling anything off a warm engine."
+              : "Connect the ECU (Connect tab) to see this bike's port guide. In general the take-off ports sit on the throttle bodies under the tank/airbox — check the workshop manual."
+          }
+        />
+      </details>
 
       <h3 className="section-gap">Before / after compare</h3>
       <p className="muted small">

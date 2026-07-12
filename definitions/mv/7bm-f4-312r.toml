@@ -24,6 +24,7 @@ name = "Marelli IAW 7BM (F4 312R) — stub"
 manufacturer = "MV Agusta"
 models = ["F4 312R (2007+)"]
 bus = "k-line"
+body_style = "faired"
 verified = false
 notes = """
 Different ECU generation from the 5SM used elsewhere in the MV range — do

@@ -100,6 +100,16 @@ export default function ServiceScreen({
               {!r.verified && <span className="badge badge-warn">unverified</span>}
             </div>
             {r.description && <p className="muted small">{r.description}</p>}
+            {r.tools.length > 0 && (
+              <>
+                <span className="routine-subhead">What you need</span>
+                <ul className="howto-tools">
+                  {r.tools.map((t, i) => (
+                    <li key={i}>{t}</li>
+                  ))}
+                </ul>
+              </>
+            )}
             {r.preconditions.length > 0 && (
               <>
                 <span className="routine-subhead">Preconditions</span>

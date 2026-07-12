@@ -65,6 +65,14 @@ ISO 14230 KWP2000). Mac-first, built with Tauri (Rust core + React UI).
   [docs/VACUOMETRO.md](docs/VACUOMETRO.md)
 - Service functions (actuator tests, TPS reset, CO trim) behind hard safety
   interlocks — **ECU map read/write is deliberately out of scope**
+- **"How do I get to it?" guides** — per-bike access guides for the
+  diagnostic connector and the sync vacuum ports: what tools to have ready,
+  an animated schematic diagram marking roughly where the port lives on
+  *your* body style (naked/faired silhouette), and a tick-off checklist of
+  the access steps. Locations are structured from the same community
+  reports the notes already carried — always labeled approximate, with an
+  honest check-your-manual fallback for bikes we have no data on. Service
+  routines list their required tools as chips on the card
 - **In-app Help & user guide** — a Help tab (no connection needed) explaining
   what the app does, every feature in detail, and — crucially — *what to
   expect*: the unverified-values honesty model, what hardware to buy, why the

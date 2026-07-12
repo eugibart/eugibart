@@ -51,6 +51,33 @@ pub struct RoutineInfo {
     pub risk: String,
     pub verified: bool,
     pub preconditions: Vec<String>,
+    /// What to have ready before running ("laptop + KKL cable").
+    pub tools: Vec<String>,
+}
+
+/// "How do I get to it?" guide — zone is the kebab-case AccessZone name the
+/// frontend's diagram keys on.
+#[derive(serde::Serialize)]
+pub struct AccessGuideInfo {
+    pub zone: String,
+    pub summary: String,
+    pub steps: Vec<String>,
+    pub tools: Vec<String>,
+    pub verify_note: Option<String>,
+    pub source: Option<String>,
+    pub source_url: Option<String>,
+}
+
+fn access_guide_info(g: &motodiag_ecu_defs::schema::AccessGuide) -> AccessGuideInfo {
+    AccessGuideInfo {
+        zone: g.zone.as_str().to_string(),
+        summary: g.summary.clone(),
+        steps: g.steps.clone(),
+        tools: g.tools.clone(),
+        verify_note: g.verify_note.clone(),
+        source: g.source.clone(),
+        source_url: g.source_url.clone(),
+    }
 }
 
 #[derive(serde::Serialize)]
@@ -77,6 +104,10 @@ pub struct DefinitionInfo {
     pub channels: Vec<ChannelInfo>,
     pub routines: Vec<RoutineInfo>,
     pub charging: Option<ChargingTestInfo>,
+    /// Silhouette variant the access-guide diagrams draw ("naked"/"faired").
+    pub body_style: String,
+    pub connector_access: Option<AccessGuideInfo>,
+    pub vacuum_access: Option<AccessGuideInfo>,
 }
 
 #[derive(serde::Serialize)]
@@ -137,6 +168,7 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                     },
                     verified: r.verified,
                     preconditions: describe_preconditions(&r.preconditions),
+                    tools: r.tools.clone(),
                 })
                 .collect(),
             charging: def.charging.as_ref().map(|c| ChargingTestInfo {
@@ -149,6 +181,9 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                 source: c.source.clone(),
                 source_url: c.source_url.clone(),
             }),
+            body_style: def.ecu.body_style.as_str().to_string(),
+            connector_access: def.connector_access.as_ref().map(access_guide_info),
+            vacuum_access: def.vacuum_access.as_ref().map(access_guide_info),
         })
         .collect()
 }

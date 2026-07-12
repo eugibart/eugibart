@@ -27,6 +27,14 @@ pub struct EcuDefinition {
     /// absent when no citable figures exist for this ECU's bikes).
     #[serde(default)]
     pub charging: Option<ChargingTest>,
+    /// "Where do I plug in?" — how to physically reach the diagnostic
+    /// connector on this ECU's bikes. Absent = we honestly don't know yet;
+    /// the UI shows a check-your-manual fallback instead of guessing.
+    #[serde(default)]
+    pub connector_access: Option<AccessGuide>,
+    /// Same, for the vacuum take-off ports used in throttle-body sync.
+    #[serde(default)]
+    pub vacuum_access: Option<AccessGuide>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,12 +49,33 @@ pub struct EcuInfo {
     #[serde(default)]
     pub models: Vec<String>,
     pub bus: BusKind,
+    /// Body shape of this definition's bikes — picks which schematic
+    /// silhouette the access-guide diagrams draw (marker positions differ).
+    #[serde(default)]
+    pub body_style: BodyStyle,
     /// True once the definition has been exercised against a real ECU.
     /// Unverified definitions are shown with a warning in the UI.
     #[serde(default)]
     pub verified: bool,
     #[serde(default)]
     pub notes: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum BodyStyle {
+    #[default]
+    Naked,
+    Faired,
+}
+
+impl BodyStyle {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BodyStyle::Naked => "naked",
+            BodyStyle::Faired => "faired",
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -219,6 +248,62 @@ pub struct ChargingTest {
     pub source_url: String,
 }
 
+/// "How do I get to it?" — where a port physically is on the bike, what
+/// tools the job needs, and the steps to reach it. Rendered as a schematic
+/// side-view diagram in the UI; `zone` picks the marker position. Locations
+/// are approximate by design — `verify_note` carries the honest caveat.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AccessGuide {
+    pub zone: AccessZone,
+    /// One-sentence answer ("3-pin connector under the tank, right side").
+    pub summary: String,
+    /// Ordered steps to physically reach the port.
+    #[serde(default)]
+    pub steps: Vec<String>,
+    /// What to have ready before starting.
+    #[serde(default)]
+    pub tools: Vec<String>,
+    /// Caveat shown with the guide ("varies by model year — verify against
+    /// the wiring diagram before first connection").
+    #[serde(default)]
+    pub verify_note: Option<String>,
+    /// Citation (site + https URL) when the location claim is
+    /// community-sourced; both or neither.
+    #[serde(default)]
+    pub source: Option<String>,
+    #[serde(default)]
+    pub source_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum AccessZone {
+    UnderSeat,
+    UnderTankLeft,
+    UnderTankRight,
+    UnderTankCenter,
+    TailSection,
+    DashArea,
+    SidePanelLeft,
+    SidePanelRight,
+}
+
+impl AccessZone {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            AccessZone::UnderSeat => "under-seat",
+            AccessZone::UnderTankLeft => "under-tank-left",
+            AccessZone::UnderTankRight => "under-tank-right",
+            AccessZone::UnderTankCenter => "under-tank-center",
+            AccessZone::TailSection => "tail-section",
+            AccessZone::DashArea => "dash-area",
+            AccessZone::SidePanelLeft => "side-panel-left",
+            AccessZone::SidePanelRight => "side-panel-right",
+        }
+    }
+}
+
 impl ChannelSpec {
     /// `None` when there's nothing to check against (no min/max set) or the
     /// value can't be classified; `Some(true)` when in range.
@@ -306,6 +391,10 @@ pub struct Routine {
     pub request: Vec<u8>,
     #[serde(default)]
     pub preconditions: Preconditions,
+    /// What to have ready before running this routine ("laptop + KKL cable",
+    /// "battery charger connected"). Shown as chips on the routine card.
+    #[serde(default)]
+    pub tools: Vec<String>,
     #[serde(default)]
     pub verified: bool,
 }
@@ -451,6 +540,42 @@ impl EcuDefinition {
                 );
             }
         }
+
+        for (label, guide) in [
+            ("connector_access", &self.connector_access),
+            ("vacuum_access", &self.vacuum_access),
+        ] {
+            let Some(g) = guide else { continue };
+            if g.summary.trim().is_empty() {
+                return Err(format!("[{label}] needs a non-empty summary"));
+            }
+            if g.steps.iter().any(|s| s.trim().is_empty())
+                || g.tools.iter().any(|t| t.trim().is_empty())
+            {
+                return Err(format!("[{label}] has an empty step or tool entry"));
+            }
+            match (&g.source, &g.source_url) {
+                (None, None) => {}
+                (Some(s), Some(u)) => {
+                    if s.trim().is_empty() || !u.starts_with("https://") {
+                        return Err(format!(
+                            "[{label}] citation needs a named source and an https source_url"
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(format!(
+                        "[{label}] source and source_url go together — set both or neither"
+                    ))
+                }
+            }
+        }
+
+        for r in &self.routines {
+            if r.tools.iter().any(|t| t.trim().is_empty()) {
+                return Err(format!("routine '{}' has an empty tools entry", r.key));
+            }
+        }
         Ok(())
     }
 }
@@ -491,6 +616,61 @@ mod tests {
             spec: None,
         };
         assert_eq!(rpm.decode(&[0x61, 0x01, 0x2E, 0xE0]), Some(3000.0));
+    }
+
+    #[test]
+    fn access_guide_parses_and_validates() {
+        let toml = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+            body_style = "faired"
+
+            [init]
+            method = "fast"
+            ecu_address = 0x10
+            baud = 10400
+
+            [identification]
+            request = [0x1A, 0x80]
+
+            [connector_access]
+            zone = "under-tank-right"
+            summary = "3-pin connector under the tank, right side."
+            steps = ["Key OFF", "Prop the tank per the manual"]
+            tools = ["FTDI KKL cable"]
+            verify_note = "Varies by model year."
+            source = "mvagusta.net"
+            source_url = "https://www.mvagusta.net/threads/1/"
+        "#;
+        let def: EcuDefinition = toml::from_str(toml).unwrap();
+        def.validate().unwrap();
+        let guide = def.connector_access.as_ref().unwrap();
+        assert_eq!(guide.zone, AccessZone::UnderTankRight);
+        assert_eq!(guide.zone.as_str(), "under-tank-right");
+        assert_eq!(def.ecu.body_style, BodyStyle::Faired);
+        assert!(def.vacuum_access.is_none());
+
+        // Bad zone is a parse error, not a silent fallback.
+        assert!(toml::from_str::<EcuDefinition>(
+            &toml.replace("under-tank-right", "behind-the-headlight")
+        )
+        .is_err());
+
+        // Citation must be https and paired.
+        let http = toml.replace("https://www.mvagusta.net/threads/1/", "http://x.com/");
+        let def: EcuDefinition = toml::from_str(&http).unwrap();
+        assert!(def.validate().unwrap_err().contains("https"));
+        let unpaired = toml.replace("source = \"mvagusta.net\"\n", "");
+        let def: EcuDefinition = toml::from_str(&unpaired).unwrap();
+        assert!(def.validate().unwrap_err().contains("go together"));
+
+        // Empty steps entries are rejected.
+        let blank = toml.replace("\"Key OFF\"", "\"  \"");
+        let def: EcuDefinition = toml::from_str(&blank).unwrap();
+        assert!(def.validate().unwrap_err().contains("empty step"));
     }
 
     #[test]

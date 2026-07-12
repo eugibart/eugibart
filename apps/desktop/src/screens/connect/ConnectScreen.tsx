@@ -11,6 +11,7 @@ import {
 import { BikeProfile, rememberActiveProfile, useGarage } from "../../garage";
 import GaragePanel from "./GaragePanel";
 import BikeWizard from "./BikeWizard";
+import HowToPanel from "../../HowToPanel";
 
 export default function ConnectScreen({
   onConnected,
@@ -100,6 +101,12 @@ export default function ConnectScreen({
   };
 
   const advancedDef = definitions.find((d) => d.id === advancedDefinitionId);
+  // Whose bike the plug-in guide describes: the Advanced pick when that
+  // flow is open, else the first garage bike, else the default definition.
+  const guideDef =
+    (advancedOpen ? advancedDef : undefined) ??
+    definitions.find((d) => d.id === profiles[0]?.definitionId) ??
+    advancedDef;
 
   return (
     <div className="panel panel-wide">
@@ -224,6 +231,24 @@ export default function ConnectScreen({
           ))}
         </div>
       )}
+
+      <details className="section-disclosure section-gap">
+        <summary>How to plug in — port location &amp; tools</summary>
+        {guideDef && (
+          <p className="muted small">
+            For <strong>{guideDef.name}</strong>
+            {profiles[0] && !advancedOpen ? ` (${profiles[0].name})` : ""} — locations are
+            approximate community reports, drawn schematically.
+          </p>
+        )}
+        <HowToPanel
+          guide={guideDef?.connector_access ?? null}
+          bodyStyle={guideDef?.body_style ?? "naked"}
+          fallback={`We don't have a verified connector location for ${
+            guideDef?.name ?? "this bike"
+          } yet — check the workshop manual wiring diagram. Any FTDI-based KKL cable works once you've found it (docs/HARDWARE.md).`}
+        />
+      </details>
 
       <button
         className="btn btn-small section-gap"

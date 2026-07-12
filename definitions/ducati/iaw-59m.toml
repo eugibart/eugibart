@@ -142,6 +142,26 @@ stator_notes = "If voltage won't climb with revs even though it reads OK at idle
 source = "ducati.ms"
 source_url = "https://www.ducati.ms/threads/750075/"
 
+# "How do I get to it?" — the FIAT 3-pin from the notes above. On this
+# generation the connector commonly lives under the seat / by the battery,
+# but coverage spans superbikes to Monsters: the verify_note does the work.
+[connector_access]
+zone = "under-seat"
+summary = "3-pin FIAT-style diagnostic connector — commonly under the seat or near the battery on these models. Only K-line, +12V, and GND are used."
+steps = [
+    "Bike on its stand, key OFF",
+    "Remove the seat (superbikes: the tail/passenger cover) to reach the battery area",
+    "Look for the round 3-pin FIAT-style connector near the battery / rear loom",
+    "First time only: verify +12V, GND, and K-line pins with a multimeter against the workshop manual wiring diagram",
+    "Key ON, kill switch to RUN, then connect — remember this ECU likely needs the slow 5-baud init (already configured here)",
+]
+tools = [
+    "FTDI-based KKL cable (VAG 409.1 style)",
+    "Multimeter (first-time pinout check)",
+    "Hex keys for the seat/tail fasteners",
+]
+verify_note = "Location varies by model (748/916-era ECUs are NOT covered here at all — see the catalog). Confirm against your model's workshop manual before first connection."
+
 [dtc]
 read_request = [0x18, 0x02, 0xFF, 0x00]
 clear_request = [0x14, 0xFF, 0x00]

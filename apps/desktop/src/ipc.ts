@@ -27,6 +27,32 @@ export interface RoutineInfo {
   risk: "low" | "medium" | "high";
   verified: boolean;
   preconditions: string[];
+  /** What to have ready before running ("laptop + KKL cable"). */
+  tools: string[];
+}
+
+/** Marker zones the access-guide diagram knows how to draw. */
+export type AccessZone =
+  | "under-seat"
+  | "under-tank-left"
+  | "under-tank-right"
+  | "under-tank-center"
+  | "tail-section"
+  | "dash-area"
+  | "side-panel-left"
+  | "side-panel-right";
+
+export type BodyStyle = "naked" | "faired";
+
+/** "How do I get to it?" — port location, tools, and access steps. */
+export interface AccessGuideInfo {
+  zone: AccessZone;
+  summary: string;
+  steps: string[];
+  tools: string[];
+  verify_note: string | null;
+  source: string | null;
+  source_url: string | null;
 }
 
 /** Community-sourced thresholds for the guided charging-system test. */
@@ -52,6 +78,9 @@ export interface DefinitionInfo {
   channels: ChannelInfo[];
   routines: RoutineInfo[];
   charging: ChargingTestInfo | null;
+  body_style: BodyStyle;
+  connector_access: AccessGuideInfo | null;
+  vacuum_access: AccessGuideInfo | null;
 }
 
 /** One bike in the structured catalog (brand → model → year → definition). */

@@ -29,6 +29,26 @@ fn shipped_definitions_load_and_validate() {
         brutale.can.is_none(),
         "K-line ECU must not have a can config"
     );
+    // Access guides: the "where do I plug in?" data the UI draws diagrams
+    // from. Both guides must survive schema changes; the connector one must
+    // keep pointing at the community-reported under-tank-right zone.
+    let conn = brutale
+        .connector_access
+        .as_ref()
+        .expect("5SM connector access guide present");
+    assert_eq!(conn.zone.as_str(), "under-tank-right");
+    assert!(!conn.steps.is_empty() && !conn.tools.is_empty());
+    assert!(conn.verify_note.is_some(), "location honesty note required");
+    assert!(brutale.vacuum_access.is_some(), "sync port guide present");
+    assert!(
+        brutale
+            .routines
+            .iter()
+            .find(|r| r.key == "tps_reset")
+            .is_some_and(|r| !r.tools.is_empty()),
+        "tps_reset lists its tools"
+    );
+
     // Shared across the whole pre-Euro3 5SM range, not just the 910.
     assert!(brutale.ecu.models.iter().any(|m| m.contains("750")));
     assert!(brutale.ecu.models.iter().any(|m| m.contains("1078")));

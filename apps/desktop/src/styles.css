@@ -883,3 +883,111 @@ textarea { resize: vertical; }
   .help-toc ul { grid-template-columns: 1fr; }
   .help section { grid-column: 2; }
 }
+
+/* ---------- How-to guides: diagram + checklist ---------- */
+
+.howto { max-width: 640px; }
+.howto-subhead {
+  margin: 16px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+}
+.howto-summary { margin: 4px 0 10px; font-size: 14px; }
+
+/* Tool chips (also reused on Service routine cards). */
+.howto-tools {
+  list-style: none;
+  margin: 6px 0 4px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.howto-tools li {
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+
+/* Schematic bike + animated location marker. */
+.howto-diagram {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px 6px;
+}
+.bike-diagram { display: block; width: 100%; max-width: 460px; height: auto; margin: 0 auto; }
+.bike-line {
+  stroke: var(--text-muted);
+  fill: none;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.bike-marker-dot { fill: var(--accent-solid); stroke: none; }
+.bike-marker-ring { fill: none; stroke: var(--accent-solid); stroke-width: 2; }
+.bike-pulse {
+  fill: none;
+  stroke: var(--accent-solid);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: howto-pulse 2.2s ease-out infinite;
+}
+.bike-pulse-late { animation-delay: 1.1s; }
+@keyframes howto-pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.4); opacity: 0; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.howto-caption {
+  margin: 8px 0 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.howto-caption-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent-solid);
+  margin-right: 6px;
+}
+
+/* Tick-off access steps: the next unchecked step carries the highlight. */
+.howto-steps { list-style: none; margin: 8px 0; padding: 0; counter-reset: howto; }
+.howto-step {
+  counter-increment: howto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin: 6px 0;
+  transition: border-color var(--dur), background var(--dur);
+}
+.howto-step label {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 9px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.howto-step label::before {
+  content: counter(howto) ".";
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.howto-step input { min-width: 0; width: auto; }
+.howto-step-next { border-color: var(--viz-series); background: var(--viz-band); }
+/* Done steps recede via the muted token (4.5:1-safe in both themes),
+   never via opacity — that breaks contrast on the light surface. */
+.howto-step-done span {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+}

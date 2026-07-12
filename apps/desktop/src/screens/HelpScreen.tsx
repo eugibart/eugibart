@@ -187,6 +187,12 @@ export default function HelpScreen() {
             saving a profile. Useful when your bike isn’t in the catalog but you know (from
             the label on the ECU itself) which family it is.
           </li>
+          <li>
+            <strong>How to plug in</strong> — a per-bike guide with a schematic diagram
+            marking roughly where the diagnostic connector lives, the tools to have ready,
+            and a tick-off checklist of the access steps. Locations are community reports,
+            always labeled approximate.
+          </li>
         </ul>
         <Expect>
           <p>
@@ -324,7 +330,9 @@ export default function HelpScreen() {
         </p>
         <p>
           This tab works <strong>without</strong> an ECU connection: the gauge is its own
-          USB device. ECU rpm simply appears when both are connected.
+          USB device. ECU rpm simply appears when both are connected. A{" "}
+          <em>"Where are the vacuum ports?"</em> guide (diagram, tools, step checklist)
+          appears for bikes we have access data for.
         </p>
         <p>
           <strong>Before / after compare:</strong> snapshots taken here or on the Dashboard

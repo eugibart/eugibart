@@ -169,6 +169,47 @@ source = "mvagusta.net"
 source_url = "https://www.mvagusta.net/threads/regulator-rectifier.231393/"
 
 # ---------------------------------------------------------------------------
+# "How do I get to it?" access guides — the same knowledge as the notes
+# above, structured so the UI can draw a location diagram and a checklist.
+# Location reports are community/aggregated (docs/MV-PINOUT.md) and remain
+# UNVERIFIED until confirmed on a real bike — verify_note says so in-app.
+# ---------------------------------------------------------------------------
+
+[connector_access]
+zone = "under-tank-right"
+summary = "3-pin diagnostic connector (K-line, +12V, GND) reported under the tank on the right side; some bikes use the 4-pin connector under the seat instead."
+steps = [
+    "Put the bike on its stand, key OFF",
+    "Lift or prop the fuel tank following the workshop manual — mind the fuel lines",
+    "Look for the 3-pin connector along the right frame spar; if it's not there, check under the seat for the 4-pin",
+    "First time only: verify +12V, GND, and K-line pins with a multimeter (docs/MV-PINOUT.md walks through it)",
+    "Key ON, kill switch to RUN, then connect from the Connect tab",
+]
+tools = [
+    "FTDI-based KKL cable (VAG 409.1 style)",
+    "Multimeter (first-time pinout check)",
+    "Tools to lift the tank — see the workshop manual for your year",
+]
+verify_note = "Connector location and wiring vary by model year — verify against the workshop manual wiring diagram before first connection. Nothing here is confirmed on a real bike yet."
+
+[vacuum_access]
+zone = "under-tank-center"
+summary = "Vacuum take-off ports sit on the throttle bodies, under the tank/airbox — one per cylinder, usually capped with a small rubber nipple."
+steps = [
+    "Warm the engine to operating temperature, then shut it off",
+    "Lift or prop the tank per the workshop manual to expose the throttle bodies",
+    "Pull the cap off each cylinder's vacuum nipple and connect the gauge hoses",
+    "Start the engine and let it idle — read the bars on the Sync tab",
+    "Refit the caps when done; a missing cap is an air leak (lean idle, popping)",
+]
+tools = [
+    "Digital vacuum gauge on a second USB port (docs/VACUOMETRO.md — ~€50 DIY build)",
+    "Gauge hoses that fit the take-off nipples",
+    "Tools to lift the tank — see the workshop manual",
+]
+verify_note = "Port style and position vary by model — confirm against the workshop manual before pulling anything off a warm engine."
+
+# ---------------------------------------------------------------------------
 # Fault codes
 # ---------------------------------------------------------------------------
 
@@ -227,6 +268,10 @@ procedure = [
 ]
 risk = "medium"
 request = [0x31, 0x01]
+tools = [
+    "Laptop with MotoDiag + KKL cable connected",
+    "Battery charger or a well-charged battery (reset aborts on low voltage)",
+]
 verified = false
 [routines.preconditions]
 engine_must_be_off = true
@@ -270,6 +315,11 @@ procedure = [
 ]
 risk = "high"
 request = [0x31, 0x02]
+tools = [
+    "Laptop with MotoDiag + KKL cable connected",
+    "Exhaust gas analyzer (strongly recommended — the app adjusts trim, it can't measure CO)",
+    "Vacuum gauge for the sync check that comes first (docs/VACUOMETRO.md)",
+]
 verified = false
 [routines.preconditions]
 min_battery_v = 12.0

@@ -36,6 +36,9 @@ const def: DefinitionInfo = {
   ],
   routines: [],
   charging: null,
+  body_style: "naked",
+  connector_access: null,
+  vacuum_access: null,
 };
 
 const guidance: ModGuidanceInfo = {
