@@ -53,6 +53,9 @@ pub struct RoutineInfo {
     pub preconditions: Vec<String>,
     /// What to have ready before running ("laptop + KKL cable").
     pub tools: Vec<String>,
+    /// Citation for a community-sourced procedure (site + https URL).
+    pub source: Option<String>,
+    pub source_url: Option<String>,
 }
 
 /// "How do I get to it?" guide — zone is the kebab-case AccessZone name the
@@ -169,6 +172,8 @@ pub async fn list_definitions() -> Vec<DefinitionInfo> {
                     verified: r.verified,
                     preconditions: describe_preconditions(&r.preconditions),
                     tools: r.tools.clone(),
+                    source: r.source.clone(),
+                    source_url: r.source_url.clone(),
                 })
                 .collect(),
             charging: def.charging.as_ref().map(|c| ChargingTestInfo {

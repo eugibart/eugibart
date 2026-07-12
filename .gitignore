@@ -13,3 +13,9 @@ apps/desktop/dist/
 
 # Logs and local captures (commit curated traces to fixtures/ deliberately)
 *.log
+
+# Raw research material (forum threads, manual scans) is working-copy only —
+# never committed. Only the extracted, attributed facts (definition TOMLs) and
+# the provenance ledger (research/SOURCES.md) go into git. See research/README.md.
+research/revlimiter/
+research/**/raw/

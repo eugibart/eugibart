@@ -395,6 +395,14 @@ pub struct Routine {
     /// "battery charger connected"). Shown as chips on the routine card.
     #[serde(default)]
     pub tools: Vec<String>,
+    /// Citation for a community-sourced procedure (site + https URL, paired).
+    /// The Service UI shows it as a clickable link under the steps — same
+    /// treatment specs and mod-notes get, so an enriched procedure says
+    /// where it came from instead of burying it in the prose.
+    #[serde(default)]
+    pub source: Option<String>,
+    #[serde(default)]
+    pub source_url: Option<String>,
     #[serde(default)]
     pub verified: bool,
 }
@@ -574,6 +582,23 @@ impl EcuDefinition {
         for r in &self.routines {
             if r.tools.iter().any(|t| t.trim().is_empty()) {
                 return Err(format!("routine '{}' has an empty tools entry", r.key));
+            }
+            match (&r.source, &r.source_url) {
+                (None, None) => {}
+                (Some(s), Some(u)) => {
+                    if s.trim().is_empty() || !u.starts_with("https://") {
+                        return Err(format!(
+                            "routine '{}' citation needs a named source and an https source_url",
+                            r.key
+                        ));
+                    }
+                }
+                _ => {
+                    return Err(format!(
+                        "routine '{}' source and source_url go together — set both or neither",
+                        r.key
+                    ))
+                }
             }
         }
         Ok(())
@@ -811,6 +836,47 @@ mod tests {
 
         assert_eq!(def.routines[0].procedure.len(), 3);
         assert_eq!(def.routines[0].procedure[0], "Step one");
+    }
+
+    #[test]
+    fn routine_citation_parses_and_validates() {
+        let base = r#"
+            [ecu]
+            id = "x"
+            name = "X"
+            manufacturer = "Y"
+            bus = "k-line"
+
+            [init]
+            method = "fast"
+            ecu_address = 0x10
+            baud = 10400
+
+            [identification]
+            request = [0x1A, 0x80]
+
+            [[routines]]
+            key = "tps_reset"
+            name = "TPS reset"
+            risk = "medium"
+            request = [0x31, 0x01]
+            procedure = ["Step one"]
+            source = "revlimiter.it"
+            source_url = "https://www.revlimiter.it/forum/viewtopic.php?t=1"
+        "#;
+        let def: EcuDefinition = toml::from_str(base).unwrap();
+        def.validate().unwrap();
+        assert_eq!(def.routines[0].source.as_deref(), Some("revlimiter.it"));
+
+        // Non-https is rejected.
+        let http = base.replace("https://www.revlimiter.it", "http://www.revlimiter.it");
+        let def: EcuDefinition = toml::from_str(&http).unwrap();
+        assert!(def.validate().unwrap_err().contains("https"));
+
+        // Source without url (or vice versa) is rejected.
+        let unpaired = base.replace("source = \"revlimiter.it\"\n", "");
+        let def: EcuDefinition = toml::from_str(&unpaired).unwrap();
+        assert!(def.validate().unwrap_err().contains("go together"));
     }
 
     #[test]

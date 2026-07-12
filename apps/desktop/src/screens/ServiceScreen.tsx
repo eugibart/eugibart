@@ -132,6 +132,11 @@ export default function ServiceScreen({
                     <li key={i}>{step}</li>
                   ))}
                 </ol>
+                {r.source && r.source_url && (
+                  <div className="routine-source">
+                    <SourceLink site={r.source} url={r.source_url} />
+                  </div>
+                )}
               </details>
             )}
             {applicableProcedureNotes(connection.definition_id, guidance, activeProfile, r.key).map(

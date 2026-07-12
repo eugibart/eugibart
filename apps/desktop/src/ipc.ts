@@ -29,6 +29,9 @@ export interface RoutineInfo {
   preconditions: string[];
   /** What to have ready before running ("laptop + KKL cable"). */
   tools: string[];
+  /** Citation for a community-sourced procedure (site + https URL). */
+  source: string | null;
+  source_url: string | null;
 }
 
 /** Marker zones the access-guide diagram knows how to draw. */
