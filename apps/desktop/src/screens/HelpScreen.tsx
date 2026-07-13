@@ -131,10 +131,12 @@ export default function HelpScreen() {
         </h3>
         <ul className="help-list">
           <li>
-            <strong>A K-line interface cable</strong> — an FTDI-based “KKL” /
-            VAG-COM-409-style USB cable (about €15–25). Cheap CH340/PL2303 clones cause
-            most “it won’t connect” misery; the hardware guide shipped with the project
-            (docs/HARDWARE.md) explains what to buy and how to check it.
+            <strong>A K-line interface cable</strong> — a “KKL”-style USB cable; exact
+            models, and the clone-chip trap to avoid, in{" "}
+            <a className="help-jump" href="#help-hardware">
+              Recommended hardware
+            </a>{" "}
+            below.
           </li>
           <li>
             <strong>The right connector on the bike</strong> — the MV diagnostic connector
@@ -142,19 +144,18 @@ export default function HelpScreen() {
             (kill switch to run) for the ECU to answer.
           </li>
           <li>
-            <strong>For throttle-body sync only:</strong> the open-hardware digital vacuum
-            gauge (a ~€50 DIY build; firmware and build guide in docs/VACUOMETRO.md) on a
-            second USB port. Everything else needs no extra hardware.
+            <strong>For throttle-body sync only:</strong> a digital vacuum gauge on a
+            second USB port (see{" "}
+            <a className="help-jump" href="#help-hardware">
+              Recommended hardware
+            </a>
+            ). Everything else needs no extra hardware.
           </li>
         </ul>
         <Expect>
           <p>
             Nothing to buy to evaluate the app: pick the built-in simulator on the Connect
-            tab and every feature below is fully usable. When you are ready to buy, the{" "}
-            <a className="help-jump" href="#help-hardware">
-              Recommended hardware
-            </a>{" "}
-            section names exact models and the traps to avoid.
+            tab and every feature below is fully usable.
           </p>
         </Expect>
       </section>

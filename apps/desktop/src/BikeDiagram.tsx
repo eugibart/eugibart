@@ -50,22 +50,33 @@ export const ZONE_COORDS: Record<BodyStyle, Record<AccessZone, { x: number; y: n
   },
 };
 
+/* The shared drawing frame both silhouettes are plotted in. The real bikes'
+   ~300 mm wheel radius mapped onto WHEEL_R fixes the scale at 7.5 mm per
+   viewBox unit; the tires touch at GROUND_Y, and the baseline is drawn two
+   units lower so it doesn't overlap the tire strokes. */
+const WHEEL_R = 40;
+const WHEEL_CY = 156;
+const FRONT_CX = 312;
+const REAR_CX = 88;
+const GROUND_Y = WHEEL_CY + WHEEL_R;
+const GROUND_LINE = `M44 ${GROUND_Y + 2} L356 ${GROUND_Y + 2}`;
+
 /** Spoked wheel: tire, rim, five spokes, hub. */
 function Wheel({ cx }: { cx: number }) {
   const s = (dx1: number, dy1: number, dx2: number, dy2: number) =>
-    `M${cx + dx1} ${156 + dy1} L${cx + dx2} ${156 + dy2}`;
+    `M${cx + dx1} ${WHEEL_CY + dy1} L${cx + dx2} ${WHEEL_CY + dy2}`;
   return (
     <>
-      <circle className="bike-line" cx={cx} cy="156" r="40" />
+      <circle className="bike-line" cx={cx} cy={WHEEL_CY} r={WHEEL_R} />
       <g className="bike-thin">
-        <circle cx={cx} cy="156" r="26" />
+        <circle cx={cx} cy={WHEEL_CY} r="26" />
         <path
           d={[s(0, -8, 0, -25), s(-8, 3, -24, 8), s(5, 7, 15, 21), s(8, -6, 22, -15), s(-6, -6, -18, -18)].join(
             " ",
           )}
         />
       </g>
-      <circle className="bike-line" cx={cx} cy="156" r="7" />
+      <circle className="bike-line" cx={cx} cy={WHEEL_CY} r="7" />
     </>
   );
 }
@@ -73,8 +84,8 @@ function Wheel({ cx }: { cx: number }) {
 function NakedSilhouette() {
   return (
     <g>
-      <Wheel cx={312} />
-      <Wheel cx={88} />
+      <Wheel cx={FRONT_CX} />
+      <Wheel cx={REAR_CX} />
       {/* fork + triple clamp + front fender */}
       <g className="bike-line">
         <path d="M313 152 L291 68" />
@@ -135,20 +146,20 @@ function NakedSilhouette() {
         className="bike-fill"
         d="M170 136 L130 141 A5.5 5.5 0 0 0 131 152 L171 147 A5.5 5.5 0 0 0 170 136 Z"
       />
-      <path className="bike-thin" d="M44 198 L356 198" />
+      <path className="bike-thin" d={GROUND_LINE} />
     </g>
   );
 }
 
-/* Dimension-true to the factory figures (via a schematic reference):
-   ground y=196 with wheel r=40 ≈ 300 mm, so 7.5 mm/unit — screen top at
-   the 1165 mm line, seat at 810 mm, belly at 120 mm ground clearance,
-   beak nose and tail overhangs from the 2060 mm overall length. */
+/* Dimension-true to the factory figures (via a schematic reference), in the
+   shared frame's 7.5 mm/unit scale: screen top at the 1165 mm line, seat at
+   810 mm, belly at 120 mm ground clearance, beak nose and tail overhangs
+   from the 2060 mm overall length — all measured up from GROUND_Y. */
 function FairedSilhouette() {
   return (
     <g>
-      <Wheel cx={312} />
-      <Wheel cx={88} />
+      <Wheel cx={FRONT_CX} />
+      <Wheel cx={REAR_CX} />
       {/* raked fork in the pocket between fender and beak + front fender */}
       <g className="bike-line">
         <path d="M313 152 L302 124" />
@@ -189,7 +200,7 @@ function FairedSilhouette() {
       </g>
       {/* single-sided swingarm */}
       <path className="bike-fill" d="M158 136 L96 148 L98 160 L162 148 Z" />
-      <path className="bike-thin" d="M44 198 L356 198" />
+      <path className="bike-thin" d={GROUND_LINE} />
     </g>
   );
 }
